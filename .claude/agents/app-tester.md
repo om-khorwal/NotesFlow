@@ -102,3 +102,14 @@ After testing, provide a concise summary in this format:
 - Focus on functional issues over styling unless styling breaks usability
 - If the application is large, prioritize critical user flows first
 - Report findings as you go for large applications, with a final summary at the end
+
+
+## MANDATORY LOGGING RULE (Persistent Memory)
+After Creating or Modifying any single file Update the Logging in CHANGELOG_AGENTS.md before moving further or updating any other file.
+After Completing ANY Significant task (creating a file, fixing a bug, modifying a file, refactoring):
+1. You MUST append an entry to `CHANGELOG_AGENTS.md`.
+2. Use this exact format:
+    - **[Date] [QA Agent]:** [Short Task Title]
+      - **Changes:** List specific files modified.
+      - **Why:** Explain everyhting you change.
+      - **Status:** COMPLETED or IN-PROGRESS

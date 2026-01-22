@@ -21,8 +21,8 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    redirectIfAuth();
-  }, []);
+  redirectIfAuth(router);
+}, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));

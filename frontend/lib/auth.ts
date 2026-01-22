@@ -76,12 +76,9 @@ export const requireAuth = (): boolean => {
   return true;
 };
 
-export const redirectIfAuth = (): boolean => {
+export const redirectIfAuth = (router: { replace: (path: string) => void }) => {
   if (isAuthenticated()) {
-    if (typeof window !== 'undefined') {
-      window.location.href = '/dashboard';
-    }
-    return true;
+    router.replace('/dashboard');
   }
-  return false;
 };
+

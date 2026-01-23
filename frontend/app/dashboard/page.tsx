@@ -22,6 +22,7 @@ export default function DashboardPage() {
   const [editingItem, setEditingItem] = useState<Note | Task | null>(null);
   const [showColorPicker, setShowColorPicker] = useState<number | null>(null);
   const [username, setUsername] = useState<string>('User');
+  const [pendingDelete, setPendingDelete] = useState<{ type: 'note' | 'task'; id: number; title: string } | null>(null);
 
 
   useEffect(() => {
@@ -144,6 +145,18 @@ export default function DashboardPage() {
       ...(typeof due_date === 'string' ? { due_date } : {}),
     };
 
+    // Update stats immediately if status changed
+    if (data.status) {
+      const currentTask = tasks.find((t) => t.id === id);
+      if (currentTask && currentTask.status !== data.status) {
+        setTaskStats((prev) => ({
+          pending: prev.pending + (data.status === 'pending' ? 1 : 0) - (currentTask.status === 'pending' ? 1 : 0),
+          in_progress: prev.in_progress + (data.status === 'in_progress' ? 1 : 0) - (currentTask.status === 'in_progress' ? 1 : 0),
+          completed: prev.completed + (data.status === 'completed' ? 1 : 0) - (currentTask.status === 'completed' ? 1 : 0),
+        }));
+      }
+    }
+
     try {
       await tasksAPI.update(id, payload as any);
 
@@ -157,29 +170,41 @@ export default function DashboardPage() {
 
 
   const handleDeleteNote = async (id: number) => {
-    if (!confirm('Delete this note?')) return;
-    try {
-      const response = await notesAPI.delete(id);
-      if (response.success) {
-        setNotes(notes.filter((n) => n.id !== id));
-        toast.success('Note deleted');
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete note');
-    }
+    const note = notes.find(n => n.id === id);
+    setPendingDelete({ type: 'note', id, title: note?.title || 'Untitled Note' });
   };
 
   const handleDeleteTask = async (id: number) => {
-    if (!confirm('Delete this task?')) return;
+    const task = tasks.find(t => t.id === id);
+    setPendingDelete({ type: 'task', id, title: task?.title || 'Untitled Task' });
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+
     try {
-      const response = await tasksAPI.delete(id);
-      if (response.success) {
-        setTasks(tasks.filter((t) => t.id !== id));
-        toast.success('Task deleted');
+      if (pendingDelete.type === 'note') {
+        const response = await notesAPI.delete(pendingDelete.id);
+        if (response.success) {
+          setNotes(notes.filter((n) => n.id !== pendingDelete.id));
+          toast.success('Note deleted');
+        }
+      } else {
+        const response = await tasksAPI.delete(pendingDelete.id);
+        if (response.success) {
+          setTasks(tasks.filter((t) => t.id !== pendingDelete.id));
+          toast.success('Task deleted');
+        }
       }
     } catch (error: any) {
-      toast.error(error.message || 'Failed to delete task');
+      toast.error(error.message || `Failed to delete ${pendingDelete.type}`);
+    } finally {
+      setPendingDelete(null);
     }
+  };
+
+  const cancelDelete = () => {
+    setPendingDelete(null);
   };
 
   const handleTogglePin = async (id: number, type: 'note' | 'task') => {
@@ -277,15 +302,24 @@ export default function DashboardPage() {
 
   return (
     <>
+      {/* Delete Confirmation Dialog */}
+      <DeleteDialog
+        isOpen={!!pendingDelete}
+        type={pendingDelete?.type || 'note'}
+        title={pendingDelete?.title}
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
+
       <div className="min-h-screen relative overflow-hidden">
         {/* Animated Gradient Background */}
-        <div className="fixed inset-0 -z-10 bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 animate-gradient bg-[length:200%_200%]" />
+        <div className="fixed inset-0 -z-1" />
 
         {/* Glow Effects */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-20 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-pink-500/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-500 rounded-full blur-3xl" />
+          <div className="absolute bottom-40 right-20 w-80 h-80 bg-purple-500/80 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-pink-500/30 rounded-full blur-3xl" />
         </div>
 
         <main className="pt-24 pb-12 min-h-screen relative z-10">
@@ -535,6 +569,122 @@ export default function DashboardPage() {
         </main>
       </div>
     </>
+  );
+}
+
+// Delete Confirmation Dialog Component
+interface DeleteDialogProps {
+  isOpen: boolean;
+  type: 'note' | 'task';
+  title?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function DeleteDialog({ isOpen, type, title, onConfirm, onCancel }: DeleteDialogProps) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onCancel();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Trap focus by preventing body scroll
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onCancel]);
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+            aria-hidden="true"
+          />
+
+          {/* Dialog */}
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="relative w-full max-w-md backdrop-blur-xl bg-slate-900/95 border border-white/20 rounded-2xl shadow-2xl p-6"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="dialog-title"
+              aria-describedby="dialog-description"
+            >
+              {/* Icon */}
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-500/20 mb-4">
+                <svg
+                  className="h-6 w-6 text-red-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+              </div>
+
+              {/* Title */}
+              <h3
+                id="dialog-title"
+                className="text-xl font-semibold text-white text-center mb-2"
+              >
+                Delete {type === 'note' ? 'Note' : 'Task'}?
+              </h3>
+
+              {/* Description */}
+              <div id="dialog-description" className="text-center mb-6">
+                {title && (
+                  <p className="text-white/70 text-sm mb-2 truncate">
+                    "{title}"
+                  </p>
+                )}
+                <p className="text-white/60 text-sm">
+                  This action cannot be undone.
+                </p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={onCancel}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white font-medium hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={onConfirm}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all shadow-lg shadow-red-900/50"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        </>
+      )}
+    </AnimatePresence>
   );
 }
 

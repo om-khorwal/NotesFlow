@@ -9,25 +9,37 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "NotesFlow - Professional Note-Taking for Everyone",
-  description: "A professional notes application for regular and professional use. Organize your thoughts, boost productivity, and never lose an idea.",
+  description:
+    "A professional notes application for regular and professional use. Organize your thoughts, boost productivity, and never lose an idea.",
 };
+
+const themeScript = `
+(function() {
+  var theme = localStorage.getItem('theme');
+  if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+})();
+`;
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className={`${inter.className} bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-white`}>
-        <Header />
-        <ThemeProvider>{children}</ThemeProvider>
-        <Footer />
-
+        <ThemeProvider>
+          <Header />
+          {children}
+          <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

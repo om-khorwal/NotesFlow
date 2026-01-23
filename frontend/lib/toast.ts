@@ -29,19 +29,19 @@ class ToastManager {
     const toast = document.createElement('div');
     toast.className = `
       transform translate-x-full opacity-0 transition-all duration-300 ease-out
-      max-w-sm w-full bg-white dark:bg-dark-card rounded-lg shadow-lg border
-      ${type === 'success' ? 'border-green-200 dark:border-green-800' : ''}
-      ${type === 'error' ? 'border-red-200 dark:border-red-800' : ''}
-      ${type === 'warning' ? 'border-yellow-200 dark:border-yellow-800' : ''}
-      ${type === 'info' ? 'border-blue-200 dark:border-blue-800' : ''}
+      max-w-sm w-full backdrop-blur-xl bg-slate-900/95 rounded-xl shadow-2xl border
+      ${type === 'success' ? 'border-green-500/30' : ''}
+      ${type === 'error' ? 'border-red-500/30' : ''}
+      ${type === 'warning' ? 'border-yellow-500/30' : ''}
+      ${type === 'info' ? 'border-blue-500/30' : ''}
       p-4 flex items-start gap-3
     `.replace(/\s+/g, ' ').trim();
 
     const iconColor = {
-      success: 'text-green-500',
-      error: 'text-red-500',
-      warning: 'text-yellow-500',
-      info: 'text-blue-500',
+      success: 'text-green-400',
+      error: 'text-red-400',
+      warning: 'text-yellow-400',
+      info: 'text-blue-400',
     }[type];
 
     const icons = {
@@ -55,8 +55,8 @@ class ToastManager {
       <svg class="w-5 h-5 ${iconColor} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         ${icons[type]}
       </svg>
-      <p class="text-sm text-gray-700 dark:text-gray-200 flex-1">${this.escapeHtml(message)}</p>
-      <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0" onclick="this.parentElement.remove()">
+      <p class="text-sm text-white flex-1">${this.escapeHtml(message)}</p>
+      <button class="text-white/50 hover:text-white flex-shrink-0 transition-colors" onclick="this.parentElement.remove()">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>

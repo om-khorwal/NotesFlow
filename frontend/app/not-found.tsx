@@ -8,7 +8,7 @@ export default function NotFound() {
   return (
     <>
       <Header />
-      <main className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <main className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

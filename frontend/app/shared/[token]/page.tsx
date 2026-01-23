@@ -40,7 +40,7 @@ export default function SharedItemPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary-600 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400">Loading shared content...</p>
@@ -51,7 +51,7 @@ export default function SharedItemPage() {
 
   if (error || !item) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-dark-bg px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950 px-4">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -83,7 +83,7 @@ export default function SharedItemPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8 px-4">
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-8">
         <Link

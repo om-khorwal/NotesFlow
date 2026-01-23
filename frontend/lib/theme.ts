@@ -1,50 +1,38 @@
-/**
- * Theme management utilities
- */
-
 const STORAGE_KEY = 'theme';
-
 export type Theme = 'light' | 'dark';
 
 export const getTheme = (): Theme => {
   if (typeof window === 'undefined') return 'light';
-
-  const savedTheme = localStorage.getItem(STORAGE_KEY) as Theme | null;
-  if (savedTheme) return savedTheme;
-
-  // Check system preference
-  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dark';
-  }
-
-  return 'light';
-};
-
-export const setTheme = (theme: Theme): void => {
-  if (typeof window === 'undefined') return;
-
-  document.documentElement.classList.remove('light', 'dark');
-  document.documentElement.classList.add(theme);
-  localStorage.setItem(STORAGE_KEY, theme);
-};
-
-export const toggleTheme = (): Theme => {
-  const currentTheme = getTheme();
-  const newTheme: Theme = currentTheme === 'dark' ? 'light' : 'dark';
-  setTheme(newTheme);
-  return newTheme;
+  return document.documentElement.classList.contains('dark') ? 'dark' : 'light';
 };
 
 export const initTheme = (): void => {
   if (typeof window === 'undefined') return;
 
-  const theme = getTheme();
-  document.documentElement.classList.add(theme);
+  const saved = localStorage.getItem(STORAGE_KEY) as Theme | null;
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-  // Listen for system theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setTheme(e.matches ? 'dark' : 'light');
-    }
-  });
+  const theme: Theme = saved ?? (prefersDark ? 'dark' : 'light');
+
+  if (theme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+};
+
+export const toggleTheme = (): Theme => {
+  const root = document.documentElement;
+  const isDark = root.classList.contains('dark');
+
+  const newTheme: Theme = isDark ? 'light' : 'dark';
+
+  if (newTheme === 'dark') {
+    root.classList.add('dark');
+  } else {
+    root.classList.remove('dark');
+  }
+
+  localStorage.setItem(STORAGE_KEY, newTheme);
+  return newTheme;
 };

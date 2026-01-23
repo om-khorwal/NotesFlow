@@ -24,10 +24,9 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    toast.success('Message sent successfully! We\'ll get back to you soon.');
+    toast.success("Message sent successfully! We'll get back to you soon.");
     setFormData({ name: '', email: '', subject: '', message: '' });
     setIsSubmitting(false);
   };
@@ -36,11 +35,17 @@ export default function ContactPage() {
     <>
       <Header currentPage="contact" />
 
-      <main className="pt-24 pb-16 min-h-screen">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="relative pt-28 pb-20 min-h-screen bg-gradient-to-b from-gray-100 to-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-black overflow-hidden">
+        {/* Ambient glow */}
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary-600/10 blur-[120px]" />
+          <div className="absolute top-1/3 -right-40 w-[600px] h-[600px] bg-purple-600/10 blur-[120px]" />
+        </div>
+
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <div className="text-center mb-16 fade-in">
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-6">
               Get in Touch
             </h1>
             <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
@@ -50,7 +55,7 @@ export default function ContactPage() {
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* Contact Form */}
-            <div className=" dark:bg-dark-card rounded-2xl border border-gray-200 dark:border-dark-border p-8 slide-in-up">
+            <div className="bg-white/80 dark:bg-slate-900/70 backdrop-blur rounded-2xl border border-gray-200/70 dark:border-white/10 p-8 slide-in-up shadow-lg shadow-black/5 dark:shadow-black/40">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Send us a Message</h2>
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
@@ -64,7 +69,7 @@ export default function ContactPage() {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
                     placeholder="John Doe"
                   />
                 </div>
@@ -80,7 +85,7 @@ export default function ContactPage() {
                     value={formData.email}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
                     placeholder="john@example.com"
                   />
                 </div>
@@ -96,7 +101,7 @@ export default function ContactPage() {
                     value={formData.subject}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
                     placeholder="How can we help?"
                   />
                 </div>
@@ -112,7 +117,7 @@ export default function ContactPage() {
                     onChange={handleChange}
                     required
                     rows={6}
-                    className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-dark-border bg-white dark:bg-dark-bg text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors resize-none"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors resize-none"
                     placeholder="Tell us more about your inquiry..."
                   />
                 </div>
@@ -120,7 +125,7 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full px-6 py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] shadow-lg shadow-primary-600/30 disabled:shadow-none"
+                  className="w-full px-6 py-4 bg-primary-600 text-white rounded-lg font-semibold hover:bg-primary-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all transform hover:scale-[1.02] shadow-lg shadow-primary-600/40 disabled:shadow-none"
                 >
                   {isSubmitting ? (
                     <span className="flex items-center justify-center">
@@ -144,9 +149,9 @@ export default function ContactPage() {
             {/* Contact Info */}
             <div className="space-y-6">
               {/* Quick Help */}
-              <div className="bg-gradient-to-br from-primary-50 to-purple-50 dark:from-primary-900/20 dark:to-purple-900/20 rounded-2xl border border-primary-200 dark:border-primary-800 p-6 scale-in">
+              <div className="bg-gradient-to-br from-primary-50 to-purple-50 dark:from-primary-900/30 dark:to-purple-900/30 rounded-2xl border border-primary-200 dark:border-white/10 p-6 scale-in shadow-md dark:shadow-primary-900/40">
                 <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-primary-600/40">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -175,9 +180,12 @@ export default function ContactPage() {
               </div>
 
               {/* Email */}
-              <div className=" dark:bg-dark-card rounded-2xl border border-gray-200 dark:border-dark-border p-6 scale-in" style={{ animationDelay: '0.1s' }}>
+              <div
+                className="bg-white/80 dark:bg-slate-900/70 backdrop-blur rounded-2xl border border-gray-200/70 dark:border-white/10 p-6 scale-in shadow-lg shadow-black/5 dark:shadow-black/40"
+                style={{ animationDelay: '0.1s' }}
+              >
                 <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-green-600/40">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -203,9 +211,12 @@ export default function ContactPage() {
               </div>
 
               {/* Social */}
-              <div className=" dark:bg-dark-card rounded-2xl border border-gray-200 dark:border-dark-border p-6 scale-in" style={{ animationDelay: '0.2s' }}>
+              <div
+                className="bg-white/80 dark:bg-slate-900/70 backdrop-blur rounded-2xl border border-gray-200/70 dark:border-white/10 p-6 scale-in shadow-lg shadow-black/5 dark:shadow-black/40"
+                style={{ animationDelay: '0.2s' }}
+              >
                 <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-600/40">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -223,7 +234,7 @@ export default function ContactPage() {
                     <div className="flex space-x-3">
                       <a
                         href="#"
-                        className="w-10 h-10 border dark:bg-dark-border rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-600 hover:text-white transition-colors"
+                        className="w-10 h-10 border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-colors"
                         aria-label="Twitter"
                       >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -232,7 +243,7 @@ export default function ContactPage() {
                       </a>
                       <a
                         href="#"
-                        className="w-10 h-10 border dark:bg-dark-border rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-600 hover:text-white transition-colors"
+                        className="w-10 h-10 border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-colors"
                         aria-label="GitHub"
                       >
                         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -245,9 +256,12 @@ export default function ContactPage() {
               </div>
 
               {/* Response Time */}
-              <div className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-2xl border border-green-200 dark:border-green-800 p-6 scale-in" style={{ animationDelay: '0.3s' }}>
+              <div
+                className="bg-gradient-to-br from-green-50 to-teal-50 dark:from-green-900/30 dark:to-teal-900/30 rounded-2xl border border-green-200 dark:border-white/10 p-6 scale-in shadow-md dark:shadow-green-900/40"
+                style={{ animationDelay: '0.3s' }}
+              >
                 <div className="text-center">
-                  <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-600/40">
                     <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"

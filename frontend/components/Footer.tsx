@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="bg-zinc-950 text-zinc-300 border-t border-zinc-800">
+    <footer className="bg-zinc-100 dark:bg-zinc-950 text-zinc-600 dark:text-zinc-300 border-t border-zinc-200 dark:border-zinc-800">
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-10">
         {/* Brand */}
         <div>
@@ -17,9 +17,9 @@ export function Footer() {
                 />
               </svg>
             </div>
-            <span className="text-lg font-semibold text-white">NotesFlow</span>
+            <span className="text-lg font-semibold text-zinc-900 dark:text-white">NotesFlow</span>
           </div>
-          <p className="text-sm text-zinc-400 max-w-sm">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm">
             Your professional note-taking companion. Capture ideas, manage tasks,
             and share anything instantly.
           </p>
@@ -27,19 +27,19 @@ export function Footer() {
 
         {/* Links */}
         <div>
-          <h4 className="text-sm font-semibold text-white mb-4">Product</h4>
+          <h4 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4">Product</h4>
           <ul className="space-y-2 text-sm">
             <li>
-              <Link href="/" className="hover:text-white transition">Home</Link>
+              <Link href="/" className="hover:text-zinc-900 dark:hover:text-white transition">Home</Link>
             </li>
             <li>
-              <Link href="/about" className="hover:text-white transition">About</Link>
+              <Link href="/about" className="hover:text-zinc-900 dark:hover:text-white transition">About</Link>
             </li>
             <li>
-              <Link href="/contact" className="hover:text-white transition">Contact</Link>
+              <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-white transition">Contact</Link>
             </li>
             <li>
-              <Link href="/dashboard" className="hover:text-white transition">Dashboard</Link>
+              <Link href="/dashboard" className="hover:text-zinc-900 dark:hover:text-white transition">Dashboard</Link>
             </li>
           </ul>
         </div>
@@ -47,8 +47,8 @@ export function Footer() {
         {/* CTA */}
         <div className="flex flex-col justify-between">
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Get Started</h4>
-            <p className="text-sm text-zinc-400 mb-4">
+            <h4 className="text-sm font-semibold text-zinc-900 dark:text-white mb-4">Get Started</h4>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
               Ready to organize your ideas?
             </p>
             <Link
@@ -61,8 +61,8 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="border-t border-zinc-800 py-6">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+      <div className="border-t border-zinc-200 dark:border-zinc-800 py-6">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500 dark:text-zinc-500">
           <span>© {new Date().getFullYear()} NotesFlow. All rights reserved.</span>
           <span className="flex items-center gap-2">
             Built for focus · Designed with care

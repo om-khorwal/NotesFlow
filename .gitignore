@@ -126,3 +126,4 @@ Thumbs.db
 *.cache
 *.bak
 *.tmp
+.claude/

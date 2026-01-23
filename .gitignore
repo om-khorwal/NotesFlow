@@ -89,12 +89,19 @@ dmypy.json
 # ===================
 # Environment files
 # ===================
+# Local environment files (with secrets)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 *.local
+
+# Backend environment files
+backend-fastapi/.env
+
+# NOTE: .env.example and .env.production (frontend) are intentionally tracked
+# They contain template/placeholder values, not secrets
 
 # ===================
 # IDE / Editors
@@ -127,3 +134,19 @@ Thumbs.db
 *.bak
 *.tmp
 .claude/
+
+# Docker / deployment secrets
+docker-compose.env
+*.pem
+*.key
+*.crt
+
+# Next.js cache
+.next/cache/
+
+# Logs
+*.log
+
+# Temporary exports
+*.zip
+*.tar.gz

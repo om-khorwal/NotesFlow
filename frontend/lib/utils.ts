@@ -2,8 +2,27 @@
  * General utility functions
  */
 
-export const formatDate = (dateString: string): string => {
+/**
+ * Format a date string for display.
+ * Note: This function uses relative time which can cause hydration mismatches.
+ * When used in SSR components, consider using the static format or wrapping
+ * the component with 'use client' and useEffect for dynamic updates.
+ *
+ * @param dateString - ISO date string to format
+ * @param useRelative - If true, uses relative time (may cause hydration issues in SSR)
+ */
+export const formatDate = (dateString: string, useRelative: boolean = true): string => {
   const date = new Date(dateString);
+
+  // For SSR safety, we can return a static format if not using relative time
+  if (!useRelative || typeof window === 'undefined') {
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);

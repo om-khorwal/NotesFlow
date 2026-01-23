@@ -2,16 +2,50 @@
  * Authentication utilities
  */
 
-// Cookie helpers for middleware support
+/**
+ * Check if we're in a production environment.
+ * Uses HTTPS protocol as the indicator.
+ */
+const isProduction = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  return window.location.protocol === 'https:';
+};
+
+/**
+ * Cookie helpers for middleware support.
+ * Automatically configures secure cookies for HTTPS in production.
+ */
 const setCookie = (name: string, value: string, days: number = 7): void => {
   if (typeof document === 'undefined') return;
   const expires = new Date(Date.now() + days * 864e5).toUTCString();
-  document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+
+  // Build cookie string with production-safe defaults
+  let cookieString = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/`;
+
+  // Add secure flag for HTTPS
+  if (isProduction()) {
+    cookieString += '; Secure';
+  }
+
+  // SameSite attribute for CSRF protection
+  cookieString += '; SameSite=Lax';
+
+  document.cookie = cookieString;
 };
 
 const deleteCookie = (name: string): void => {
   if (typeof document === 'undefined') return;
-  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+
+  let cookieString = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+
+  // Add secure flag for HTTPS
+  if (isProduction()) {
+    cookieString += '; Secure';
+  }
+
+  cookieString += '; SameSite=Lax';
+
+  document.cookie = cookieString;
 };
 
 export interface User {

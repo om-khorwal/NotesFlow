@@ -21,8 +21,8 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-  redirectIfAuth(router);
-}, [router]);
+    redirectIfAuth(router);
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -35,21 +35,22 @@ export default function LoginPage() {
     try {
       if (isLogin) {
         const response = await authAPI.login(formData.email, formData.password);
+
         if (response.success && response.data) {
           setToken(response.data.token);
           setUser(response.data.user);
           toast.success('Welcome back!');
+
+          // give browser one tick to persist cookie
+          await new Promise((r) => setTimeout(r, 50));
+
           router.push('/dashboard');
-        } else toast.error(response.message || 'Login failed');
+        } else {
+          toast.error(response.message || 'Login failed');
+        }
       } else {
         if (formData.password !== formData.confirmPassword) {
           toast.error('Passwords do not match');
-          setIsLoading(false);
-          return;
-        }
-        if (formData.password.length < 6) {
-          toast.error('Password must be at least 6 characters');
-          setIsLoading(false);
           return;
         }
 
@@ -63,8 +64,13 @@ export default function LoginPage() {
           setToken(response.data.token);
           setUser(response.data.user);
           toast.success('Account created!');
+
+          await new Promise((r) => setTimeout(r, 50));
+
           router.push('/dashboard');
-        } else toast.error(response.message || 'Registration failed');
+        } else {
+          toast.error(response.message || 'Registration failed');
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Something went wrong');
@@ -73,6 +79,7 @@ export default function LoginPage() {
     }
   };
 
+
   const toggleMode = () => {
     setIsLogin(!isLogin);
     setFormData({ username: '', email: '', password: '', confirmPassword: '' });
@@ -80,7 +87,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden flex items-center justify-center">
-      <FloatingOrbs/>
+      <FloatingOrbs />
 
       <Link
         href="/"

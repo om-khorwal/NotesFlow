@@ -191,10 +191,12 @@ export default function ProfilePage() {
   const getImageUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('/static/')) {
-      return `${API_BASE_URL}${url}`;
+      const base = API_BASE_URL.replace(/\/api$/, '');
+      return `${base}${url}`;
     }
     return url;
   };
+
 
   if (isLoading) {
     return (

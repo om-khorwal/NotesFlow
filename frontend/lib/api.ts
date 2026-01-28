@@ -42,7 +42,18 @@ async function request<T = any>(
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+
+    // Try to parse JSON, handle non-JSON responses
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      // Response is not JSON
+      if (!response.ok) {
+        throw new APIError(response.status, `Server error: ${response.statusText}`);
+      }
+      throw new APIError(0, 'Invalid response from server');
+    }
 
     if (!response.ok) {
       // Handle 401 - redirect to login
@@ -60,7 +71,9 @@ async function request<T = any>(
     if (error instanceof APIError) {
       throw error;
     }
-    throw new APIError(0, 'Network error. Please check your connection.');
+    // Provide more context for network errors
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    throw new APIError(0, `Network error: ${errorMessage}`);
   }
 }
 
@@ -228,6 +241,36 @@ export const profileAPI = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+  },
+
+  async uploadAvatar(file: File) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/profile/upload-avatar`, {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+    return response.json();
+  },
+
+  async uploadCover(file: File) {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/profile/upload-cover`, {
+      method: 'POST',
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: formData,
+    });
+    return response.json();
   },
 };
 

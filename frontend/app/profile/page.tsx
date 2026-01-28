@@ -10,6 +10,9 @@ import { getInitials } from '@/lib/utils';
 import type { User, UserProfile } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const BIO_MAX_CHARS = 500;
+
 export default function ProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -17,6 +20,10 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [coverPreview, setCoverPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     display_name: '',
     bio: '',
@@ -59,19 +66,98 @@ export default function ProfilePage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    // Enforce bio character limit
+    if (name === 'bio' && value.length > BIO_MAX_CHARS) {
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCoverFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCoverPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const uploadFile = async (file: File, type: 'avatar' | 'cover'): Promise<string | null> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const formDataUpload = new FormData();
+    formDataUpload.append('file', file);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/profile/upload-${type}`, {
+        method: 'POST',
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        body: formDataUpload,
+      });
+      const data = await response.json();
+      if (data.success) {
+        return type === 'avatar' ? data.data.avatar_url : data.data.cover_photo_url;
+      }
+      throw new Error(data.message || 'Upload failed');
+    } catch (error: any) {
+      toast.error(error.message || `Failed to upload ${type}`);
+      return null;
+    }
   };
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await profileAPI.update(formData);
+      // Upload files first if selected
+      let avatarUrl = formData.avatar_url;
+      let coverUrl = formData.cover_photo_url;
+
+      if (avatarFile) {
+        const uploadedUrl = await uploadFile(avatarFile, 'avatar');
+        if (uploadedUrl) {
+          avatarUrl = uploadedUrl;
+        }
+      }
+
+      if (coverFile) {
+        const uploadedUrl = await uploadFile(coverFile, 'cover');
+        if (uploadedUrl) {
+          coverUrl = uploadedUrl;
+        }
+      }
+
+      const response = await profileAPI.update({
+        ...formData,
+        avatar_url: avatarUrl,
+        cover_photo_url: coverUrl,
+      });
       if (response.success) {
         toast.success('Profile updated successfully');
         setIsEditing(false);
+        setAvatarFile(null);
+        setCoverFile(null);
+        setAvatarPreview(null);
+        setCoverPreview(null);
         await loadProfile();
       } else {
         toast.error(response.message || 'Failed to update profile');
@@ -85,6 +171,10 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     setIsEditing(false);
+    setAvatarFile(null);
+    setCoverFile(null);
+    setAvatarPreview(null);
+    setCoverPreview(null);
     setFormData({
       display_name: profile?.display_name || '',
       bio: profile?.bio || '',
@@ -95,6 +185,15 @@ export default function ProfilePage() {
       twitter_url: profile?.twitter_url || '',
       website_url: profile?.website_url || '',
     });
+  };
+
+  // Get avatar URL with proper base URL for uploaded files
+  const getImageUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (url.startsWith('/static/')) {
+      return `${API_BASE_URL}${url}`;
+    }
+    return url;
   };
 
   if (isLoading) {
@@ -123,10 +222,10 @@ export default function ProfilePage() {
           >
             {/* Cover Photo */}
             <div
-              className="relative h-64 md:h-80 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 overflow-hidden"
+              className="relative h-48 md:h-64 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 overflow-hidden"
               style={{
-                backgroundImage: formData.cover_photo_url
-                  ? `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url(${formData.cover_photo_url})`
+                backgroundImage: (coverPreview || getImageUrl(formData.cover_photo_url))
+                  ? `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.1)), url(${coverPreview || getImageUrl(formData.cover_photo_url)})`
                   : undefined,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
@@ -134,30 +233,6 @@ export default function ProfilePage() {
             >
               {/* Gradient overlay for better readability */}
               <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-
-              {/* Edit overlay when editing */}
-              <AnimatePresence>
-                {isEditing && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center"
-                  >
-                    <div className="text-center text-white px-4">
-                      <svg className="w-16 h-16 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                      <p className="text-sm font-medium">Enter cover photo URL in the form below</p>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
 
               {/* Edit Button - Top Right */}
               {!isEditing && (
@@ -180,67 +255,40 @@ export default function ProfilePage() {
                 </motion.button>
               )}
             </div>
+          </motion.div>
 
-            {/* Profile Photo - Overlapping the cover */}
-            <div className="relative px-4 sm:px-6 lg:px-8">
-              <div className="relative -mt-16 sm:-mt-20 md:-mt-24 flex flex-col sm:flex-row sm:items-end sm:space-x-6">
-                {/* Avatar */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                  className="relative group"
-                >
-                  <div className="w-32 h-32 sm:w-40 sm:h-40 md:w-44 md:h-44 rounded-full border-4 border-white dark:border-slate-950 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-4xl font-bold shadow-2xl overflow-hidden ring-4 ring-white/10">
-                    {formData.avatar_url ? (
-                      <img src={formData.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <span>{getInitials(user?.username || user?.email || 'U')}</span>
-                    )}
-                  </div>
-
-                  {/* Avatar edit overlay */}
-                  <AnimatePresence>
-                    {isEditing && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center cursor-pointer"
-                      >
-                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
-                          />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-
-                {/* User Info - Next to avatar on desktop */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="mt-4 sm:mt-0 sm:mb-4 flex-1"
-                >
-                  <h1 className="text-3xl sm:text-4xl font-bold text-zinc-900 dark:text-white">
-                    {formData.display_name || user?.username || 'User'}
-                  </h1>
-                  <p className="text-base sm:text-lg text-zinc-600 dark:text-zinc-400 mt-1">
-                    @{user?.username}
-                  </p>
-                  {formData.bio && !isEditing && (
-                    <p className="mt-3 text-zinc-700 dark:text-zinc-300 max-w-2xl">
-                      {formData.bio}
-                    </p>
+          {/* Profile Info Section - Completely below cover photo */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="px-4 sm:px-6 lg:px-8 py-6 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6">
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-zinc-800 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-xl overflow-hidden">
+                  {(avatarPreview || getImageUrl(formData.avatar_url)) ? (
+                    <img src={avatarPreview || getImageUrl(formData.avatar_url) || ''} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span>{getInitials(user?.username || user?.email || 'U')}</span>
                   )}
-                </motion.div>
+                </div>
+              </div>
+
+              {/* User Info */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-white truncate">
+                  {formData.display_name || user?.username || 'User'}
+                </h1>
+                <p className="text-base text-zinc-500 dark:text-zinc-400 mt-1">
+                  @{user?.username}
+                </p>
+                {formData.bio && !isEditing && (
+                  <p className="mt-3 text-zinc-600 dark:text-zinc-300 max-w-2xl line-clamp-3">
+                    {formData.bio}
+                  </p>
+                )}
               </div>
             </div>
           </motion.div>
@@ -325,14 +373,18 @@ export default function ProfilePage() {
                     onChange={handleChange}
                     disabled={!isEditing}
                     rows={4}
+                    maxLength={BIO_MAX_CHARS}
                     placeholder="Tell us about yourself..."
                     className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-zinc-50 dark:disabled:bg-zinc-800/50 disabled:cursor-not-allowed transition-all resize-none"
                   />
+                  <p className={`mt-2 text-xs ${formData.bio.length >= BIO_MAX_CHARS ? 'text-red-500' : 'text-zinc-500 dark:text-zinc-400'} text-right`}>
+                    {formData.bio.length}/{BIO_MAX_CHARS} characters
+                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Profile Images */}
+            {/* Profile Images - File Upload */}
             <AnimatePresence>
               {isEditing && (
                 <motion.div
@@ -355,39 +407,55 @@ export default function ProfilePage() {
                   <div className="space-y-5">
                     <div>
                       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                        Avatar URL
+                        Profile Picture
                       </label>
-                      <div className="relative">
-                        <input
-                          type="url"
-                          name="avatar_url"
-                          value={formData.avatar_url}
-                          onChange={handleChange}
-                          placeholder="https://example.com/avatar.jpg"
-                          className="w-full px-4 py-3 pl-11 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                        />
-                        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                      <div className="flex items-center gap-4">
+                        {(avatarPreview || getImageUrl(formData.avatar_url)) && (
+                          <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-zinc-200 dark:border-zinc-700 flex-shrink-0">
+                            <img
+                              src={avatarPreview || getImageUrl(formData.avatar_url) || ''}
+                              alt="Avatar preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarFileChange}
+                            className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400 dark:hover:file:bg-indigo-900/50 transition-all cursor-pointer"
+                          />
+                          <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                            JPG, PNG, GIF or WebP. Max 5MB.
+                          </p>
+                        </div>
                       </div>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                        Cover Photo URL
+                        Cover Photo
                       </label>
-                      <div className="relative">
+                      <div className="space-y-3">
+                        {(coverPreview || getImageUrl(formData.cover_photo_url)) && (
+                          <div className="w-full h-32 rounded-xl overflow-hidden border-2 border-zinc-200 dark:border-zinc-700">
+                            <img
+                              src={coverPreview || getImageUrl(formData.cover_photo_url) || ''}
+                              alt="Cover preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
                         <input
-                          type="url"
-                          name="cover_photo_url"
-                          value={formData.cover_photo_url}
-                          onChange={handleChange}
-                          placeholder="https://example.com/cover.jpg"
-                          className="w-full px-4 py-3 pl-11 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverFileChange}
+                          className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400 dark:hover:file:bg-indigo-900/50 transition-all cursor-pointer"
                         />
-                        <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                          JPG, PNG, GIF or WebP. Max 5MB. Recommended: 1500x500px
+                        </p>
                       </div>
                     </div>
                   </div>

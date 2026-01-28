@@ -52,7 +52,7 @@ export function Footer() {
               Ready to organize your ideas?
             </p>
             <Link
-              href="/login"
+              href="/login?mode=signup"
               className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-white text-sm font-medium shadow-lg shadow-indigo-600/30 hover:bg-indigo-700 transition"
             >
               Create Account

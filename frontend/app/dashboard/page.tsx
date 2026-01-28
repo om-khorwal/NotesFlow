@@ -81,7 +81,6 @@ export default function DashboardPage() {
     try {
       const response = await tasksAPI.create({
         title: 'New Task',
-        description: '',
         status: 'pending',
         priority: 'medium',
       });
@@ -89,8 +88,11 @@ export default function DashboardPage() {
         setTasks([response.data, ...tasks]);
         setEditingItem(response.data);
         toast.success('Task created');
+      } else {
+        toast.error(response.message || 'Failed to create task');
       }
     } catch (error: any) {
+      console.error('Task creation error:', error);
       toast.error(error.message || 'Failed to create task');
     }
   };
@@ -498,7 +500,7 @@ export default function DashboardPage() {
                   )}
                 </motion.div>
               ) : (
-                <div className="notes-masonry">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   <AnimatePresence>
                     {sortedNotes.map((note) => (
                       <NoteCard
@@ -547,7 +549,7 @@ export default function DashboardPage() {
                   )}
                 </motion.div>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <AnimatePresence>
                     {sortedTasks.map((task) => (
                       <TaskCard
@@ -559,7 +561,6 @@ export default function DashboardPage() {
                         onTogglePin={handleTogglePin}
                         onShare={handleShareTask}
                       />
-
                     ))}
                   </AnimatePresence>
                 </div>
@@ -725,7 +726,7 @@ function NoteCard({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`note-card rounded-2xl p-5 cursor-pointer mb-4 backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
+      className={`note-card rounded-2xl p-5 cursor-pointer backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
       onClick={() => !isEditing && setIsEditing(true)}
     >
       {/* Header */}
@@ -735,13 +736,12 @@ function NoteCard({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-
-            className="flex-1 text-lg font-semibold bg-transparent border-b-2 border-white/30 focus:border-indigo-400 outline-none text-gray-100 placeholder-gray-600"
+            className="flex-1 text-lg font-semibold bg-transparent border-b-2 border-white/30 focus:border-indigo-400 outline-none text-white placeholder-gray-500"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <h3 className="text-lg font-semibold text-gray-300 flex-1">{note.title}</h3>
+          <h3 className="text-lg font-semibold text-white flex-1 truncate">{note.title}</h3>
         )}
         <div className="flex items-center space-x-1 ml-2">
           <button

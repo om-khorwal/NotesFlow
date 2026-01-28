@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authAPI } from '@/lib/api';
 import { setToken, setUser, redirectIfAuth } from '@/lib/auth';
@@ -11,6 +11,7 @@ import FloatingOrbs from '@/components/FloatingOrbs';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,7 +23,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     redirectIfAuth(router);
-  }, [router]);
+    // Check for mode=signup parameter
+    const mode = searchParams.get('mode');
+    if (mode === 'signup') {
+      setIsLogin(false);
+    }
+  }, [router, searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -41,10 +47,8 @@ export default function LoginPage() {
           setUser(response.data.user);
           toast.success('Welcome back!');
 
-          // give browser one tick to persist cookie
-          await new Promise((r) => setTimeout(r, 50));
-
-          router.push('/dashboard');
+          // Use window.location for reliable redirect after auth
+          window.location.href = '/dashboard';
         } else {
           toast.error(response.message || 'Login failed');
         }
@@ -65,9 +69,8 @@ export default function LoginPage() {
           setUser(response.data.user);
           toast.success('Account created!');
 
-          await new Promise((r) => setTimeout(r, 50));
-
-          router.push('/dashboard');
+          // Use window.location for reliable redirect after auth
+          window.location.href = '/dashboard';
         } else {
           toast.error(response.message || 'Registration failed');
         }

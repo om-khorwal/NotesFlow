@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { requireAuth, getUser } from '@/lib/auth';
-import { notesAPI, tasksAPI } from '@/lib/api';
+import { requireAuth, getUser, setUser as setAuthUser } from '@/lib/auth';
+import { notesAPI, tasksAPI, authAPI } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import type { Note, Task } from '@/lib/types';
 import { formatDate, NOTE_COLORS, debounce } from '@/lib/utils';
@@ -299,7 +299,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const u = getUser();
-    if (u?.username) setUsername(u.username);
+    if (u?.username) {
+      setUsername(u.username);
+    } else {
+      // Fetch user profile from server if not in memory (e.g., after page refresh)
+      authAPI.getProfile().then((response) => {
+        if (response.success && response.data?.user) {
+          setAuthUser(response.data.user);
+          setUsername(response.data.user.username);
+        }
+      }).catch(() => {
+        // Silent fail - user will see default "User" text
+      });
+    }
   }, []);
 
   return (
@@ -738,11 +750,11 @@ function NoteCard({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`note-card rounded-2xl p-5 cursor-pointer backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
+      className={`note-card relative overflow-hidden rounded-2xl p-5 cursor-pointer backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
       onClick={() => !isEditing && setIsEditing(true)}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between gap-2 mb-3">
         {isEditing ? (
           <input
             type="text"
@@ -753,9 +765,9 @@ function NoteCard({
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <h3 className="text-lg font-semibold text-white flex-1 truncate">{note.title}</h3>
+          <h3 className="text-lg font-semibold text-white truncate max-w-[70%]">{note.title}</h3>
         )}
-        <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -949,15 +961,15 @@ function TaskCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`task-card rounded-2xl p-6 backdrop-blur-xl bg-white/10 border border-white/20 shadow-lg 
-        hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 
-        ${task.status === 'completed' ? 'opacity-75' : ''} 
+      className={`task-card relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl bg-white/10 border border-white/20 shadow-lg
+        hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300
+        ${task.status === 'completed' ? 'opacity-75' : ''}
         ${task.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
       style={{ borderLeftWidth: '4px', borderLeftColor: task.background_color }}
       onClick={() => !isEditing && setIsEditing(true)}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-start space-x-3 flex-1">
+      <div className="flex items-start justify-between gap-2 mb-3">
+        <div className="flex items-start space-x-3 flex-1 min-w-0">
           {/* Status Checkbox */}
           <button
             onClick={(e) => {
@@ -998,7 +1010,7 @@ function TaskCard({
               />
             ) : (
               <h3
-                className={`text-lg font-semibold text-white mb-1 ${localStatus === 'completed' ? 'line-through opacity-60' : ''
+                className={`text-lg font-semibold text-white mb-1 truncate max-w-[70%] ${localStatus === 'completed' ? 'line-through opacity-60' : ''
                   }`}
               >
                 {task.title}
@@ -1104,7 +1116,7 @@ function TaskCard({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();

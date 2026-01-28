@@ -1,5 +1,6 @@
 /**
  * Authentication utilities
+ * Uses in-memory state + secure cookies only (no localStorage/sessionStorage)
  */
 
 /**
@@ -33,6 +34,12 @@ const setCookie = (name: string, value: string, days: number = 7): void => {
   document.cookie = cookieString;
 };
 
+const getCookie = (name: string): string | null => {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? decodeURIComponent(match[2]) : null;
+};
+
 const deleteCookie = (name: string): void => {
   if (typeof document === 'undefined') return;
 
@@ -55,37 +62,41 @@ export interface User {
   created_at: string;
 }
 
+// In-memory auth state (secure - not accessible via DevTools Storage tab)
+let inMemoryToken: string | null = null;
+let inMemoryUser: User | null = null;
+
 export const getToken = (): string | null => {
+  // First check in-memory, then fallback to cookie for initial page load
+  if (inMemoryToken) return inMemoryToken;
   if (typeof window === 'undefined') return null;
-  return localStorage.getItem('authToken');
+  const cookieToken = getCookie('auth_token');
+  if (cookieToken) {
+    inMemoryToken = cookieToken; // Cache in memory
+  }
+  return cookieToken;
 };
 
 export const setToken = (token: string): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('authToken', token);
+  inMemoryToken = token;
   setCookie('auth_token', token);
 };
 
 export const removeToken = (): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('authToken');
+  inMemoryToken = null;
   deleteCookie('auth_token');
 };
 
 export const getUser = (): User | null => {
-  if (typeof window === 'undefined') return null;
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+  return inMemoryUser;
 };
 
 export const setUser = (user: User): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem('user', JSON.stringify(user));
+  inMemoryUser = user;
 };
 
 export const removeUser = (): void => {
-  if (typeof window === 'undefined') return;
-  localStorage.removeItem('user');
+  inMemoryUser = null;
 };
 
 export const isAuthenticated = (): boolean => {
@@ -115,4 +126,3 @@ export const redirectIfAuth = (router: { replace: (path: string) => void }) => {
     router.replace('/dashboard');
   }
 };
-

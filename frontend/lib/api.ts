@@ -2,6 +2,8 @@
  * API Service - All backend API calls
  */
 
+import { getToken, removeToken, removeUser } from './auth';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 export interface APIResponse<T = any> {
@@ -28,8 +30,8 @@ async function request<T = any>(
 ): Promise<APIResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
 
-  // Get token from localStorage (client-side only)
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  // Get token from auth module (in-memory + cookie fallback)
+  const token = getToken();
 
   const config: RequestInit = {
     headers: {
@@ -58,8 +60,8 @@ async function request<T = any>(
     if (!response.ok) {
       // Handle 401 - redirect to login
       if (response.status === 401 && typeof window !== 'undefined') {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+        removeToken();
+        removeUser();
         window.location.href = '/login';
         throw new APIError(401, 'Unauthorized');
       }
@@ -244,7 +246,7 @@ export const profileAPI = {
   },
 
   async uploadAvatar(file: File) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
 
@@ -259,7 +261,7 @@ export const profileAPI = {
   },
 
   async uploadCover(file: File) {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getToken();
     const formData = new FormData();
     formData.append('file', file);
 

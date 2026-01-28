@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/Header';
-import { requireAuth, getUser } from '@/lib/auth';
-import { profileAPI } from '@/lib/api';
+import { requireAuth, getUser, getToken, setUser as setAuthUser } from '@/lib/auth';
+import { profileAPI, authAPI } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { getInitials } from '@/lib/utils';
 import type { User, UserProfile } from '@/lib/types';
@@ -37,8 +37,27 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!requireAuth()) return;
-    setUser(getUser());
-    loadProfile();
+    const cachedUser = getUser();
+    if (cachedUser) {
+      setUser(cachedUser);
+    }
+    // Load profile and user data from server
+    const loadData = async () => {
+      // Fetch user info from server if not in memory
+      if (!cachedUser) {
+        try {
+          const userResponse = await authAPI.getProfile();
+          if (userResponse.success && userResponse.data?.user) {
+            setAuthUser(userResponse.data.user);
+            setUser(userResponse.data.user);
+          }
+        } catch {
+          // Silent fail
+        }
+      }
+      await loadProfile();
+    };
+    loadData();
   }, []);
 
   const loadProfile = async () => {
@@ -102,7 +121,7 @@ export default function ProfilePage() {
   };
 
   const uploadFile = async (file: File, type: 'avatar' | 'cover'): Promise<string | null> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+    const token = getToken();
     const formDataUpload = new FormData();
     formDataUpload.append('file', file);
 

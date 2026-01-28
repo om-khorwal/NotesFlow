@@ -107,7 +107,7 @@ export default function ProfilePage() {
     formDataUpload.append('file', file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/profile/upload-${type}`, {
+      const response = await fetch(`${API_BASE_URL}/profile/upload-${type}`, {
         method: 'POST',
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),

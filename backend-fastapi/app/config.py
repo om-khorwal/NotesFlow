@@ -22,7 +22,7 @@ class Settings(BaseSettings):
     debug: bool = True
 
     # CORS - Configure allowed frontend origins
-    cors_origins: str = "http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500"
+    cors_origins: str = "http://localhost:3000,http://localhost:5500,http://127.0.0.1:5500,https://notes-flow.theokcompany.in"
 
     # Cookie settings for auth
     cookie_secure: bool = False  # Set to True in production (HTTPS)

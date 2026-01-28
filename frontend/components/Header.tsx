@@ -14,6 +14,17 @@ interface HeaderProps {
   currentPage?: string;
 }
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+
+const getImageUrl = (url: string | null) => {
+  if (!url) return null;
+  if (url.startsWith('/static/')) {
+    const base = API_BASE_URL.replace(/\/api$/, '');
+    return `${base}${url}`;
+  }
+  return url;
+};
+
 export function Header({ currentPage }: HeaderProps) {
   const pathname = usePathname();
   const [isAuth, setIsAuth] = useState(false);
@@ -65,33 +76,22 @@ export function Header({ currentPage }: HeaderProps) {
       <nav className="fixed top-0 inset-x-0 z-50 backdrop-blur-xl bg-white/70 dark:bg-zinc-950/70 border-b border-zinc-200/60 dark:border-zinc-800/60">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex h-16 items-center justify-between">
-            {/* Logo */}
             <Link href="/" className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
               </div>
-              <span className="text-lg font-semibold text-zinc-900 dark:text-white">
-                NotesFlow
-              </span>
+              <span className="text-lg font-semibold text-zinc-900 dark:text-white">NotesFlow</span>
             </Link>
 
-            {/* Desktop Nav */}
             <div className="hidden md:flex items-center gap-2">
               {navLink('/', 'Home')}
               {navLink('/about', 'About')}
               {navLink('/contact', 'Contact')}
             </div>
 
-            {/* Right */}
             <div className="flex items-center gap-2">
-          
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
@@ -109,16 +109,22 @@ export function Header({ currentPage }: HeaderProps) {
                   >
                     Dashboard
                   </Link>
+
                   <Link
                     href="/profile"
                     className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm overflow-hidden shadow-lg hover:scale-105 transition"
                   >
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                      <img
+                        src={getImageUrl(avatarUrl) || ''}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <span>{getInitials(user?.username || user?.email || 'U')}</span>
                     )}
                   </Link>
+
                   <button
                     onClick={() => setLogoutModalOpen(true)}
                     className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
@@ -140,50 +146,6 @@ export function Header({ currentPage }: HeaderProps) {
               )}
             </div>
           </div>
-
-          {mobileMenuOpen && (
-            <div className="md:hidden pb-4 pt-2 space-y-2">
-              {navLink('/', 'Home')}
-              {navLink('/about', 'About')}
-              {navLink('/contact', 'Contact')}
-              <div className="h-px bg-zinc-200 dark:bg-zinc-800 my-2" />
-              {isAuth ? (
-                <>
-                  <Link
-                    href="/dashboard"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium"
-                  >
-                    Dashboard
-                  </Link>
-                  <Link
-                    href="/profile"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    Profile
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setMobileMenuOpen(false);
-                      setLogoutModalOpen(true);
-                    }}
-                    className="w-full text-left px-3 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                  >
-                    Logout
-                  </button>
-                </>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-lg text-indigo-600 dark:text-indigo-400 font-medium"
-                >
-                  Login
-                </Link>
-              )}
-            </div>
-          )}
         </div>
       </nav>
 

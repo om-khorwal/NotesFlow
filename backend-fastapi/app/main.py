@@ -42,7 +42,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         field = ".".join(str(loc) for loc in error["loc"][1:]) if len(error["loc"]) > 1 else error["loc"][0]
         errors.append(ErrorDetail(field=str(field), message=error["msg"]))
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content=APIResponse(
             success=False,
@@ -51,6 +51,14 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         ).model_dump()
     )
 
+    # Add CORS headers if origin is allowed
+    origin = request.headers.get("origin")
+    if origin and origin in settings.cors_origins_list:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+
+    return response
+
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
@@ -58,13 +66,21 @@ async def general_exception_handler(request: Request, exc: Exception):
     # In debug mode, include error details
     message = str(exc) if settings.debug else "An internal error occurred"
 
-    return JSONResponse(
+    response = JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content=APIResponse(
             success=False,
             message=message
         ).model_dump()
     )
+
+    # Add CORS headers if origin is allowed
+    origin = request.headers.get("origin")
+    if origin and origin in settings.cors_origins_list:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+
+    return response
 
 
 # Include routers

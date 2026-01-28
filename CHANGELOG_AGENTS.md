@@ -4,6 +4,46 @@ This file tracks all significant changes made by AI agents to the codebase.
 
 ## LOG ENTRIES:
 
+- **[2026-01-28] [Frontend Agent]:** Fix NoteCard/TaskCard Action Button Overflow & Replace Auto-save with Explicit Save Buttons
+  - **Changes:**
+    - Modified `/home/thunder/code/notes-app/frontend/app/dashboard/page.tsx`
+  - **Why:**
+    - **Fixed Action Button Overflow Issue:**
+      - Added `flex-shrink-0` class to action buttons container (div with space-x-1) in both NoteCard and TaskCard components
+      - This prevents action buttons (pin, color picker, share, delete) from being compressed or overflowing when the card content is being edited
+      - The title input can now shrink appropriately while action buttons maintain their size
+    - **Replaced Silent Auto-save with Explicit Save Buttons (NoteCard):**
+      - Removed debounced auto-save behavior that triggered on blur (users found it unreliable)
+      - Added visible Save and Cancel buttons that appear when `isEditing === true`
+      - Save button calls `handleSave()` immediately (no debounce) to persist title and content changes
+      - Cancel button calls `handleCancel()` to discard changes and reset to original values
+      - Added `useEffect` hook to reset local state (title/content) when note prop changes
+      - Textarea no longer has `onBlur` handler that auto-saved
+    - **Replaced Silent Auto-save with Explicit Save Buttons (TaskCard):**
+      - Removed `onBlur={handleSave}` from both title input and description textarea
+      - Added visible Save and Cancel buttons that appear when `isEditing === true`
+      - Save button calls `handleSave()` to persist title and description changes
+      - Cancel button calls `handleCancel()` to discard changes and reset to original values
+      - Status and Priority dropdowns remain instant-update (using `onQuickUpdate`) as they are quick actions, not text editing
+      - Added `useEffect` hook to reset local state (title/description/status) when task prop changes
+    - **Button Styling:**
+      - Save button: `bg-indigo-600 hover:bg-indigo-500` with white text
+      - Cancel button: `bg-white/10 hover:bg-white/20` with white text
+      - Both buttons use `onClick={(e) => { e.stopPropagation(); handleSave/Cancel(); }}` to prevent card click handlers from interfering
+  - **Status:** COMPLETED
+
+- **[2026-01-28] [Backend Agent]:** Fix CORS Headers on Error Responses (500 & 422)
+  - **Changes:**
+    - Modified `/home/thunder/code/notes-app/backend-fastapi/app/main.py`
+  - **Why:**
+    - Browser was blocking 500 and 422 error responses with "No 'Access-Control-Allow-Origin' header" error
+    - When `general_exception_handler` and `validation_exception_handler` create `JSONResponse` directly, they bypass the FastAPI CORS middleware
+    - Added explicit CORS headers (`Access-Control-Allow-Origin` and `Access-Control-Allow-Credentials`) to both exception handlers
+    - Implemented origin validation: headers are only added if the request's `Origin` header matches an entry in `settings.cors_origins_list`
+    - This ensures error messages from backend (e.g., database connection errors, validation failures) now reach the frontend instead of being blocked by the browser's CORS policy
+    - Response body structure and status codes remain unchanged, only headers were added
+  - **Status:** COMPLETED
+
 - **[2026-01-22] [Frontend Agent]:** Delete Confirmation Dialog & Toast Dark Mode Styling
   - **Changes:**
     - Modified `/home/thunder/code/notes-app/frontend/app/dashboard/page.tsx`

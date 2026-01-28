@@ -713,10 +713,22 @@ function NoteCard({
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
 
+  // Reset local state when note changes
+  useEffect(() => {
+    setTitle(note.title);
+    setContent(note.content);
+  }, [note.title, note.content]);
+
   const handleSave = () => {
     if (title.trim() !== note.title || content.trim() !== note.content) {
       onUpdate(note.id, { title: title.trim() || 'Untitled', content: content.trim() });
     }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setTitle(note.title);
+    setContent(note.content);
     setIsEditing(false);
   };
 
@@ -743,7 +755,7 @@ function NoteCard({
         ) : (
           <h3 className="text-lg font-semibold text-white flex-1 truncate">{note.title}</h3>
         )}
-        <div className="flex items-center space-x-1 ml-2">
+        <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -845,7 +857,6 @@ function NoteCard({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-
           className="w-full min-h-[100px] bg-transparent text-white resize-none outline-none placeholder-gray-600"
           placeholder="Start typing..."
           onClick={(e) => e.stopPropagation()}
@@ -860,7 +871,24 @@ function NoteCard({
         >
           {note.content || <span className="text-gray-500 italic">Click to write...</span>}
         </div>
+      )}
 
+      {/* Save/Cancel Buttons (visible when editing) */}
+      {isEditing && (
+        <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleSave(); }}
+            className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-500 transition-colors"
+          >
+            Save
+          </button>
+          <button
+            onClick={(e) => { e.stopPropagation(); handleCancel(); }}
+            className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
       )}
 
       {/* Footer */}
@@ -892,9 +920,12 @@ function TaskCard({
   const [description, setDescription] = useState(task.description);
   const [localStatus, setLocalStatus] = useState<Task['status']>(task.status);
 
+  // Reset local state when task changes
   useEffect(() => {
     setLocalStatus(task.status);
-  }, [task.status]);
+    setTitle(task.title);
+    setDescription(task.description);
+  }, [task.status, task.title, task.description]);
 
   const handleSave = () => {
     if (title.trim() !== task.title || description.trim() !== task.description) {
@@ -903,6 +934,12 @@ function TaskCard({
         description: description.trim(),
       });
     }
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setTitle(task.title);
+    setDescription(task.description);
     setIsEditing(false);
   };
 
@@ -958,7 +995,6 @@ function TaskCard({
                 className="w-full text-lg font-semibold bg-transparent border-b-2 border-white/30 focus:border-indigo-400 outline-none mb-2 text-white placeholder-white/40"
                 autoFocus
                 onClick={(e) => e.stopPropagation()}
-                onBlur={handleSave}
               />
             ) : (
               <h3
@@ -976,7 +1012,6 @@ function TaskCard({
                 className="w-full min-h-[60px] bg-transparent text-white/80 resize-none outline-none placeholder-white/30"
                 placeholder="Add description..."
                 onClick={(e) => e.stopPropagation()}
-                onBlur={handleSave}
               />
             ) : (
               <div
@@ -1047,11 +1082,29 @@ function TaskCard({
                 </span>
               )}
             </div>
+
+            {/* Save/Cancel Buttons (visible when editing) */}
+            {isEditing && (
+              <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleSave(); }}
+                  className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-500 transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleCancel(); }}
+                  className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex items-center space-x-1 ml-2">
+        <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
           <button
             onClick={(e) => {
               e.stopPropagation();

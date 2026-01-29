@@ -55,13 +55,22 @@ export default function Home() {
             {/* Right */}
             <div className="relative">
               <div className="absolute inset-0 -z-10 blur-3xl bg-gradient-to-tr from-indigo-300/40 via-indigo-500/20 to-purple-300/30 dark:from-indigo-900/30 dark:via-indigo-700/15 dark:to-purple-900/25 rounded-full" />
+
               <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
-                <div className="h-72 w-full rounded-2xl bg-gradient-to-br from-indigo-100 via-white to-indigo-50 dark:from-indigo-950 dark:via-slate-900 dark:to-indigo-900" />
+                <div className="h-72 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-100 via-white to-indigo-50 dark:from-indigo-950 dark:via-slate-900 dark:to-indigo-900 flex items-center justify-center">
+                  <img
+                    src="/stationary.jpg"
+                    alt="Notes and tasks preview"
+                    className="h-full w-full"
+                  />
+                </div>
+
                 <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
                   Your notes and tasks — beautifully organized.
                 </p>
               </div>
             </div>
+
           </div>
         </section>
 

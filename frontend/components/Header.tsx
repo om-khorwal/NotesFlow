@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { getUser, isAuthenticated, logout } from '@/lib/auth';
 import { getInitials } from '@/lib/utils';
-import { toggleTheme, getTheme, type Theme } from '@/lib/theme';
+import { getTheme, type Theme } from '@/lib/theme';
 import { profileAPI } from '@/lib/api';
 import type { User } from '@/lib/types';
 import { LogoutModal } from './LogoutModal';
@@ -35,10 +35,12 @@ export function Header({ currentPage }: HeaderProps) {
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
-    setIsAuth(isAuthenticated());
+    const auth = isAuthenticated();
+    setIsAuth(auth);
     setUser(getUser());
     setTheme(getTheme());
-    if (isAuthenticated()) loadProfile();
+    if (auth) loadProfile();
+    setMobileMenuOpen(false);
   }, [pathname]);
 
   const loadProfile = async () => {
@@ -61,6 +63,7 @@ export function Header({ currentPage }: HeaderProps) {
   const navLink = (href: string, label: string) => (
     <Link
       href={href}
+      onClick={() => setMobileMenuOpen(false)}
       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
         isActive(href)
           ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30'
@@ -79,10 +82,17 @@ export function Header({ currentPage }: HeaderProps) {
             <Link href="/" className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
                 </svg>
               </div>
-              <span className="text-lg font-semibold text-zinc-900 dark:text-white">NotesFlow</span>
+              <span className="text-lg font-semibold text-zinc-900 dark:text-white">
+                NotesFlow
+              </span>
             </Link>
 
             <div className="hidden md:flex items-center gap-2">
@@ -130,7 +140,12 @@ export function Header({ currentPage }: HeaderProps) {
                     className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -149,7 +164,73 @@ export function Header({ currentPage }: HeaderProps) {
         </div>
       </nav>
 
-      <LogoutModal isOpen={logoutModalOpen} onClose={() => setLogoutModalOpen(false)} onConfirm={handleLogout} />
+      {/* Mobile Menu */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed top-16 inset-x-0 z-40 bg-white dark:bg-zinc-950 border-b border-zinc-200 dark:border-zinc-800 shadow-lg">
+          <div className="px-6 py-4 flex flex-col gap-3">
+            {navLink('/', 'Home')}
+            {navLink('/about', 'About')}
+            {navLink('/contact', 'Contact')}
+
+            <div className="mt-3 border-t border-zinc-200 dark:border-zinc-800 pt-3">
+              {isAuth ? (
+                <div className="flex flex-col gap-3">
+                  <Link
+                    href="/dashboard"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-medium text-center"
+                  >
+                    Dashboard
+                  </Link>
+
+                  <Link
+                    href="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm overflow-hidden">
+                      {avatarUrl ? (
+                        <img
+                          src={getImageUrl(avatarUrl) || ''}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{getInitials(user?.username || user?.email || 'U')}</span>
+                      )}
+                    </div>
+                    <span className="text-sm text-zinc-700 dark:text-zinc-200">Profile</span>
+                  </Link>
+
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      setLogoutModalOpen(true);
+                    }}
+                    className="px-3 py-2 rounded-lg text-left text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="block text-center px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-sm font-medium"
+                >
+                  Login
+                </Link>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <LogoutModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+        onConfirm={handleLogout}
+      />
     </>
   );
 }

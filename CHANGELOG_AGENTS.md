@@ -4,6 +4,66 @@ This file tracks all significant changes made by AI agents to the codebase.
 
 ## LOG ENTRIES:
 
+- **[2026-01-31] [QA Agent]:** Systematic Testing - Full App Audit (Second Pass)
+  - **Changes:** No code files modified. Testing and analysis only.
+  - **Why:** Performed systematic code review and runtime testing of all pages (/, /about, /contact, /login, /dashboard, /profile, /not-found, /shared/[token]). Verified all navigation links, theme toggle, header/footer rendering, button colors, toast theme-matching, and note card dark mode colors. Key findings: (1) CSS animation classes fade-in/slide-in-up/scale-in used in About and Contact pages are never defined in any CSS file; (2) primary-600 (#0284c7 sky blue) used on About/Contact/404/Shared buttons is visually inconsistent with indigo-600 (#4f39f6) used on Home/Header/Dashboard/Login; (3) note-* colors in tailwind.config.ts are unused dead config. All custom Tailwind colors compile correctly. No duplicate headers. Login page correctly hides Header/Footer. Theme toggle works. Toast reads dark class at creation time.
+  - **Status:** COMPLETED
+
+- **[2026-01-31] [QA Agent]:** Comprehensive Application Testing - Bug Report
+  - **Changes:** No code files modified. Testing and analysis only.
+  - **Why:** Performed systematic testing of all pages (/, /about, /contact, /login, /dashboard, /profile, /not-found), navigation links, theme toggle, forms, and interactive elements. Identified 5 critical bugs, 5 major bugs, and 4 minor issues. Key findings: (1) Tailwind v4 ignoring tailwind.config.ts causing all custom colors (primary-*, dark-card, dark-border, note-*) to be missing from compiled CSS; (2) Duplicate Header rendering on every page due to layout.tsx AND individual pages both rendering Header; (3) Backend 401 errors return FastAPI default format instead of app format; (4) Toast notifications always use dark theme even in light mode; (5) Multiple dead links on contact page.
+  - **Status:** COMPLETED
+
+- **[2026-01-31] [Frontend Agent]:** Add Light/Dark Theme Toggle to Header
+  - **Changes:**
+    - Modified `/home/thunder/code/notes-app/frontend/components/Header.tsx`
+  - **Why:**
+    - Added theme toggle button to Header component for both desktop and mobile views
+    - Imported `toggleTheme` function from `@/lib/theme`
+    - Desktop: Sun/moon icon button positioned before mobile hamburger menu
+    - Mobile: Full-width button with icon + text label in mobile dropdown menu
+    - Button calls `toggleTheme()` and updates local theme state on click
+    - Shows sun icon when in dark mode (to switch to light), moon icon when in light mode (to switch to dark)
+    - Styling: `p-2 rounded-lg text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition`
+    - Added title attributes for accessibility
+  - **Status:** COMPLETED
+
+- **[2026-01-31] [Frontend Agent]:** Add Dual-Theme Support to Dashboard Page
+  - **Changes:**
+    - Modified `/home/thunder/code/notes-app/frontend/app/dashboard/page.tsx`
+  - **Why:**
+    - Converted dashboard from dark-only glassmorphism to support both light and dark themes
+    - **Background glow effects:** Reduced opacity in light mode (`opacity-20 dark:opacity-100`)
+    - **Welcome section:** `text-zinc-900 dark:text-white` for heading, `text-zinc-600 dark:text-white/60` for subtitle
+    - **Task stats cards:** Added light mode base styles (`bg-white`, `border-zinc-200`, `text-zinc-900`, colored stat badges with `text-yellow-600 dark:text-yellow-300`, etc.)
+    - **Tabs bar:** Active tab `bg-indigo-100 text-indigo-700 dark:bg-white/20 dark:text-white`, inactive `text-zinc-500 dark:text-white/60`
+    - **Search input:** `bg-white dark:bg-white/10`, `border-zinc-200 dark:border-white/20`, `text-zinc-900 dark:text-white`, `placeholder-zinc-400 dark:placeholder-white/40`
+    - **Loading spinner:** `border-zinc-200 dark:border-white/20`
+    - **Empty states:** Light mode icon background `bg-white dark:bg-white/10`, text colors updated
+    - **DeleteDialog:** `bg-white/95 dark:bg-slate-900/95`, all text and border colors dual-themed
+    - **NoteCard:**
+      - Added `style={{ backgroundColor: note.background_color }}` to preserve pastel colors
+      - Text colors: `text-zinc-800 dark:text-white` (fixes invisible white text on light pastels)
+      - Input/textarea placeholders: `placeholder-zinc-500 dark:placeholder-gray-500`
+      - Icons: `text-zinc-600 dark:text-gray-700`
+      - Hover states: `hover:bg-black/10 dark:hover:bg-white/10`
+      - Color picker background: `bg-white/90 dark:bg-slate-900/90`
+      - Footer border: `border-zinc-300 dark:border-gray-800/20`
+      - Cancel button: `bg-zinc-200 dark:bg-white/10 text-zinc-900 dark:text-white`
+    - **TaskCard:**
+      - Card background: `bg-white dark:bg-white/10`
+      - Borders: `border-zinc-200 dark:border-white/20`
+      - Checkbox border: `border-zinc-300 dark:border-white/40`
+      - Title/description text: `text-zinc-900 dark:text-white`, `text-zinc-700 dark:text-white/80`
+      - Status/Priority badges: Light mode uses `bg-yellow-100 text-yellow-700 border-yellow-200`, dark uses existing glassmorphism styles
+      - Select option elements: `bg-white dark:bg-slate-900`
+      - Due date badge: `bg-purple-100 text-purple-700 dark:bg-purple-500/30 dark:text-purple-200`
+      - Action buttons hover: `hover:bg-zinc-100 dark:hover:bg-white/10`
+      - Footer border: `border-zinc-200 dark:border-white/20`
+    - **CRITICAL:** Dark mode appearance preserved EXACTLY as before - all current dark styles moved to `dark:` variants
+    - **NO changes** to layout, spacing, functionality, or event handlers
+  - **Status:** COMPLETED
+
 - **[2026-01-28] [Frontend Agent]:** Fix NoteCard/TaskCard Action Button Overflow & Replace Auto-save with Explicit Save Buttons
   - **Changes:**
     - Modified `/home/thunder/code/notes-app/frontend/app/dashboard/page.tsx`

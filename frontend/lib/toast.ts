@@ -26,14 +26,16 @@ class ToastManager {
     this.init();
     if (!this.container) return;
 
+    const isDark = document.documentElement.classList.contains('dark');
+
     const toast = document.createElement('div');
     toast.className = `
       transform translate-x-full opacity-0 transition-all duration-300 ease-out
-      max-w-sm w-full backdrop-blur-xl bg-slate-900/95 rounded-xl shadow-2xl border
-      ${type === 'success' ? 'border-green-500/30' : ''}
-      ${type === 'error' ? 'border-red-500/30' : ''}
-      ${type === 'warning' ? 'border-yellow-500/30' : ''}
-      ${type === 'info' ? 'border-blue-500/30' : ''}
+      max-w-sm w-full backdrop-blur-xl ${isDark ? 'bg-slate-900/95' : 'bg-white/95 shadow-lg'} rounded-xl shadow-2xl border
+      ${type === 'success' ? (isDark ? 'border-green-500/30' : 'border-green-300') : ''}
+      ${type === 'error' ? (isDark ? 'border-red-500/30' : 'border-red-300') : ''}
+      ${type === 'warning' ? (isDark ? 'border-yellow-500/30' : 'border-yellow-300') : ''}
+      ${type === 'info' ? (isDark ? 'border-blue-500/30' : 'border-blue-300') : ''}
       p-4 flex items-start gap-3
     `.replace(/\s+/g, ' ').trim();
 
@@ -51,12 +53,15 @@ class ToastManager {
       info: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />',
     };
 
+    const textColor = isDark ? 'text-white' : 'text-zinc-900';
+    const closeColor = isDark ? 'text-white/50 hover:text-white' : 'text-zinc-400 hover:text-zinc-700';
+
     toast.innerHTML = `
       <svg class="w-5 h-5 ${iconColor} flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         ${icons[type]}
       </svg>
-      <p class="text-sm text-white flex-1">${this.escapeHtml(message)}</p>
-      <button class="text-white/50 hover:text-white flex-shrink-0 transition-colors" onclick="this.parentElement.remove()">
+      <p class="text-sm ${textColor} flex-1">${this.escapeHtml(message)}</p>
+      <button class="${closeColor} flex-shrink-0 transition-colors" onclick="this.parentElement.remove()">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>

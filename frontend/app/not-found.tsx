@@ -2,12 +2,9 @@
 
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Header } from '@/components/Header'
-
 export default function NotFound() {
   return (
     <>
-      <Header />
       <main className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-950">
         <motion.div
           initial={{ opacity: 0, y: 20 }}

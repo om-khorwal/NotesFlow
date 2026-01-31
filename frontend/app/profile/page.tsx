@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
 import { requireAuth, getUser, getToken, setUser as setAuthUser } from '@/lib/auth';
 import { profileAPI, authAPI } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -220,7 +219,6 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <>
-        <Header currentPage="profile" />
         <div className="min-h-screen pt-20 flex items-center justify-center bg-white dark:bg-slate-950">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600" />
         </div>
@@ -230,7 +228,6 @@ export default function ProfilePage() {
 
   return (
     <>
-      <Header currentPage="profile" />
 
       <main className="pt-20 pb-16 min-h-screen bg-white dark:bg-slate-950">
         <div className="max-w-5xl mx-auto">

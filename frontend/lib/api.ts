@@ -65,7 +65,7 @@ async function request<T = any>(
         window.location.href = '/login';
         throw new APIError(401, 'Unauthorized');
       }
-      throw new APIError(response.status, data.message || 'Request failed', data);
+      throw new APIError(response.status, data.detail || data.message || 'Request failed', data);
     }
 
     return data;

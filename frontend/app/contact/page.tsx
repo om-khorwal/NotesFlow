@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Header } from '@/components/Header';
 import { toast } from '@/lib/toast';
 
 export default function ContactPage() {
@@ -33,8 +32,6 @@ export default function ContactPage() {
 
   return (
     <>
-      <Header currentPage="contact" />
-
       <main className="relative pt-28 pb-20 min-h-screen bg-gradient-to-b from-gray-100 to-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-black overflow-hidden">
         {/* Ambient glow */}
         <div className="pointer-events-none absolute inset-0">
@@ -167,7 +164,7 @@ export default function ContactPage() {
                       Looking for instant answers? Check out our documentation and FAQs for common questions.
                     </p>
                     <a
-                      href="#"
+                      href="/about"
                       className="text-primary-600 dark:text-primary-400 font-medium hover:underline inline-flex items-center"
                     >
                       View Documentation
@@ -233,7 +230,9 @@ export default function ContactPage() {
                     </p>
                     <div className="flex space-x-3">
                       <a
-                        href="#"
+                        href="https://twitter.com/notesflow"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="w-10 h-10 border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-colors"
                         aria-label="Twitter"
                       >
@@ -242,7 +241,9 @@ export default function ContactPage() {
                         </svg>
                       </a>
                       <a
-                        href="#"
+                        href="https://github.com/notesflow"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="w-10 h-10 border border-gray-300/70 dark:border-white/10 bg-white dark:bg-slate-950 rounded-lg flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-colors"
                         aria-label="GitHub"
                       >

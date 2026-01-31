@@ -1,11 +1,8 @@
-import { Header } from '@/components/Header';
 import Link from 'next/link';
 
 export default function AboutPage() {
   return (
     <>
-      <Header currentPage="about" />
-
       <main className="relative pt-28 pb-20 min-h-screen bg-gradient-to-b from-gray-100 to-gray-50 dark:from-slate-950 dark:via-slate-950 dark:to-black overflow-hidden">
         {/* Ambient background glow */}
         <div className="pointer-events-none absolute inset-0">

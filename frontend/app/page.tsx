@@ -1,11 +1,8 @@
-import { Header } from '@/components/Header';
 import Link from 'next/link';
 
 export default function Home() {
   return (
     <>
-      <Header />
-
       <main className="min-h-screen bg-white text-zinc-900 dark:bg-slate-950 dark:text-zinc-100">
         {/* Hero */}
         <section className="relative pt-36 pb-28 overflow-hidden">

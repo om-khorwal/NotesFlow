@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Header } from '@/components/Header';
 import { requireAuth, getUser, setUser as setAuthUser } from '@/lib/auth';
 import { notesAPI, tasksAPI, authAPI } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import type { Note, Task } from '@/lib/types';
-import { formatDate, NOTE_COLORS, debounce } from '@/lib/utils';
+import { formatDate, NOTE_COLORS, adjustColorForDarkMode, debounce } from '@/lib/utils';
+import { getTheme } from '@/lib/theme';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function DashboardPage() {
@@ -331,19 +331,19 @@ export default function DashboardPage() {
 
         {/* Glow Effects */}
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-          <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-500 rounded-full blur-3xl" />
-          <div className="absolute bottom-40 right-20 w-80 h-80 bg-purple-500/80 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-pink-500/30 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-10 w-96 h-96 bg-indigo-500 rounded-full blur-3xl opacity-20 dark:opacity-100" />
+          <div className="absolute bottom-40 right-20 w-80 h-80 bg-purple-500/80 rounded-full blur-3xl opacity-20 dark:opacity-100" />
+          <div className="absolute top-1/2 left-1/3 w-72 h-72 bg-pink-500/30 rounded-full blur-3xl opacity-20 dark:opacity-100" />
         </div>
 
         <main className="pt-24 pb-12 min-h-screen relative z-10">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Welcome Section */}
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
+              <h1 className="text-4xl font-bold text-zinc-900 dark:text-white mb-2 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
                 Welcome back, {username}!
               </h1>
-              <p className="text-white/60 text-lg">
+              <p className="text-zinc-600 dark:text-white/60 text-lg">
                 {activeTab === 'notes'
                   ? 'Organize your thoughts and ideas'
                   : 'Manage your tasks and stay productive'}
@@ -356,15 +356,15 @@ export default function DashboardPage() {
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-lg hover:shadow-[0_0_30px_rgba(234,179,8,0.3)] transition-shadow duration-300"
+                  className="backdrop-blur-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/20 rounded-2xl p-5 shadow-lg hover:shadow-[0_0_30px_rgba(234,179,8,0.3)] transition-shadow duration-300"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-yellow-300 font-medium mb-1">Pending</p>
-                      <p className="text-3xl font-bold text-white">{taskStats.pending}</p>
+                      <p className="text-sm text-yellow-600 dark:text-yellow-300 font-medium mb-1">Pending</p>
+                      <p className="text-3xl font-bold text-zinc-900 dark:text-white">{taskStats.pending}</p>
                     </div>
-                    <div className="w-14 h-14 bg-yellow-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-yellow-400/30">
-                      <svg className="w-7 h-7 text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-14 h-14 bg-yellow-100 dark:bg-yellow-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-yellow-200 dark:border-yellow-400/30">
+                      <svg className="w-7 h-7 text-yellow-600 dark:text-yellow-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
@@ -374,15 +374,15 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-lg hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-shadow duration-300"
+                  className="backdrop-blur-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/20 rounded-2xl p-5 shadow-lg hover:shadow-[0_0_30px_rgba(59,130,246,0.3)] transition-shadow duration-300"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-blue-300 font-medium mb-1">In Progress</p>
-                      <p className="text-3xl font-bold text-white">{taskStats.in_progress}</p>
+                      <p className="text-sm text-blue-600 dark:text-blue-300 font-medium mb-1">In Progress</p>
+                      <p className="text-3xl font-bold text-zinc-900 dark:text-white">{taskStats.in_progress}</p>
                     </div>
-                    <div className="w-14 h-14 bg-blue-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-blue-400/30">
-                      <svg className="w-7 h-7 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-14 h-14 bg-blue-100 dark:bg-blue-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-blue-200 dark:border-blue-400/30">
+                      <svg className="w-7 h-7 text-blue-600 dark:text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                     </div>
@@ -392,15 +392,15 @@ export default function DashboardPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 shadow-lg hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] transition-shadow duration-300"
+                  className="backdrop-blur-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/20 rounded-2xl p-5 shadow-lg hover:shadow-[0_0_30px_rgba(34,197,94,0.3)] transition-shadow duration-300"
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-green-300 font-medium mb-1">Completed</p>
-                      <p className="text-3xl font-bold text-white">{taskStats.completed}</p>
+                      <p className="text-sm text-green-600 dark:text-green-300 font-medium mb-1">Completed</p>
+                      <p className="text-3xl font-bold text-zinc-900 dark:text-white">{taskStats.completed}</p>
                     </div>
-                    <div className="w-14 h-14 bg-green-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-green-400/30">
-                      <svg className="w-7 h-7 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-14 h-14 bg-green-100 dark:bg-green-500/20 backdrop-blur-sm rounded-xl flex items-center justify-center border border-green-200 dark:border-green-400/30">
+                      <svg className="w-7 h-7 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
@@ -414,16 +414,16 @@ export default function DashboardPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl p-5 mb-8 shadow-lg"
+              className="backdrop-blur-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/20 rounded-2xl p-5 mb-8 shadow-lg"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 {/* Tabs */}
-                <div className="relative flex space-x-2 bg-white/5 backdrop-blur-md rounded-xl p-1.5 border border-white/10">
+                <div className="relative flex space-x-2 bg-gray-50 dark:bg-white/5 backdrop-blur-md rounded-xl p-1.5 border border-zinc-100 dark:border-white/10">
                   <button
                     onClick={() => setActiveTab('notes')}
                     className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-300 ${activeTab === 'notes'
-                      ? 'bg-white/20 text-white shadow-lg shadow-indigo-500/20 border border-white/20'
-                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-white/20 dark:text-white shadow-lg shadow-indigo-500/20 border border-indigo-200 dark:border-white/20'
+                      : 'text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10'
                       }`}
                   >
                     Notes
@@ -431,8 +431,8 @@ export default function DashboardPage() {
                   <button
                     onClick={() => setActiveTab('tasks')}
                     className={`px-6 py-2.5 rounded-lg font-medium transition-all duration-300 ${activeTab === 'tasks'
-                      ? 'bg-white/20 text-white shadow-lg shadow-indigo-500/20 border border-white/20'
-                      : 'text-white/60 hover:text-white hover:bg-white/10'
+                      ? 'bg-indigo-100 text-indigo-700 dark:bg-white/20 dark:text-white shadow-lg shadow-indigo-500/20 border border-indigo-200 dark:border-white/20'
+                      : 'text-zinc-500 dark:text-white/60 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/10'
                       }`}
                   >
                     Tasks
@@ -447,10 +447,10 @@ export default function DashboardPage() {
                       placeholder={`Search ${activeTab}...`}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full sm:w-64 px-4 py-2.5 pl-11 rounded-xl border border-white/20 bg-white/10 backdrop-blur-md text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 hover:border-white/40 transition-all"
+                      className="w-full sm:w-64 px-4 py-2.5 pl-11 rounded-xl border border-zinc-200 dark:border-white/20 bg-white dark:bg-white/10 backdrop-blur-md text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 hover:border-zinc-300 dark:hover:border-white/40 transition-all"
                     />
                     <svg
-                      className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/40"
+                      className="absolute left-3.5 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400 dark:text-white/40"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -479,7 +479,7 @@ export default function DashboardPage() {
             {/* Content */}
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-14 w-14 border-4 border-white/20 border-t-indigo-400" />
+                <div className="animate-spin rounded-full h-14 w-14 border-4 border-zinc-200 dark:border-white/20 border-t-indigo-400" />
               </div>
             ) : activeTab === 'notes' ? (
               sortedNotes.length === 0 ? (
@@ -488,8 +488,8 @@ export default function DashboardPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-20"
                 >
-                  <div className="w-28 h-28 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-6 border border-white/20 shadow-lg">
-                    <svg className="w-14 h-14 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-28 h-28 bg-white dark:bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-6 border border-zinc-200 dark:border-white/20 shadow-lg">
+                    <svg className="w-14 h-14 text-zinc-400 dark:text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -498,8 +498,8 @@ export default function DashboardPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-semibold text-white mb-3">No notes yet</h3>
-                  <p className="text-white/60 mb-8 text-lg">
+                  <h3 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-3">No notes yet</h3>
+                  <p className="text-zinc-600 dark:text-white/60 mb-8 text-lg">
                     {searchQuery ? 'No notes match your search' : 'Create your first note to get started'}
                   </p>
                   {!searchQuery && (
@@ -537,8 +537,8 @@ export default function DashboardPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-20"
                 >
-                  <div className="w-28 h-28 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-6 border border-white/20 shadow-lg">
-                    <svg className="w-14 h-14 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="w-28 h-28 bg-white dark:bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center mx-auto mb-6 border border-zinc-200 dark:border-white/20 shadow-lg">
+                    <svg className="w-14 h-14 text-zinc-400 dark:text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -547,8 +547,8 @@ export default function DashboardPage() {
                       />
                     </svg>
                   </div>
-                  <h3 className="text-2xl font-semibold text-white mb-3">No tasks yet</h3>
-                  <p className="text-white/60 mb-8 text-lg">
+                  <h3 className="text-2xl font-semibold text-zinc-900 dark:text-white mb-3">No tasks yet</h3>
+                  <p className="text-zinc-600 dark:text-white/60 mb-8 text-lg">
                     {searchQuery ? 'No tasks match your search' : 'Create your first task to get started'}
                   </p>
                   {!searchQuery && (
@@ -635,7 +635,7 @@ function DeleteDialog({ isOpen, type, title, onConfirm, onCancel }: DeleteDialog
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="relative w-full max-w-md backdrop-blur-xl bg-slate-900/95 border border-white/20 rounded-2xl shadow-2xl p-6"
+              className="relative w-full max-w-md backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 border border-zinc-200 dark:border-white/20 rounded-2xl shadow-2xl p-6"
               role="dialog"
               aria-modal="true"
               aria-labelledby="dialog-title"
@@ -661,7 +661,7 @@ function DeleteDialog({ isOpen, type, title, onConfirm, onCancel }: DeleteDialog
               {/* Title */}
               <h3
                 id="dialog-title"
-                className="text-xl font-semibold text-white text-center mb-2"
+                className="text-xl font-semibold text-zinc-900 dark:text-white text-center mb-2"
               >
                 Delete {type === 'note' ? 'Note' : 'Task'}?
               </h3>
@@ -669,11 +669,11 @@ function DeleteDialog({ isOpen, type, title, onConfirm, onCancel }: DeleteDialog
               {/* Description */}
               <div id="dialog-description" className="text-center mb-6">
                 {title && (
-                  <p className="text-white/70 text-sm mb-2 truncate">
+                  <p className="text-zinc-700 dark:text-white/70 text-sm mb-2 truncate">
                     "{title}"
                   </p>
                 )}
-                <p className="text-white/60 text-sm">
+                <p className="text-zinc-600 dark:text-white/60 text-sm">
                   This action cannot be undone.
                 </p>
               </div>
@@ -682,7 +682,7 @@ function DeleteDialog({ isOpen, type, title, onConfirm, onCancel }: DeleteDialog
               <div className="flex gap-3">
                 <button
                   onClick={onCancel}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-white/20 bg-white/10 text-white font-medium hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/40 transition-all"
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-white/20 bg-zinc-100 dark:bg-white/10 text-zinc-900 dark:text-white font-medium hover:bg-zinc-200 dark:hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-zinc-300 dark:focus:ring-white/40 transition-all"
                 >
                   Cancel
                 </button>
@@ -724,12 +724,23 @@ function NoteCard({
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(note.title);
   const [content, setContent] = useState(note.content);
+  const [isDark, setIsDark] = useState(false);
 
   // Reset local state when note changes
   useEffect(() => {
     setTitle(note.title);
     setContent(note.content);
   }, [note.title, note.content]);
+
+  // Track theme for note card background
+  useEffect(() => {
+    setIsDark(getTheme() === 'dark');
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const handleSave = () => {
     if (title.trim() !== note.title || content.trim() !== note.content) {
@@ -744,14 +755,17 @@ function NoteCard({
     setIsEditing(false);
   };
 
+  const cardBg = isDark ? adjustColorForDarkMode(note.background_color) : note.background_color;
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`note-card relative overflow-hidden rounded-2xl p-5 cursor-pointer backdrop-blur-xl border border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
+      className={`note-card relative overflow-hidden rounded-2xl p-5 cursor-pointer backdrop-blur-xl border border-zinc-200 dark:border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
       onClick={() => !isEditing && setIsEditing(true)}
+      style={{ backgroundColor: cardBg }}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-3">
@@ -760,12 +774,12 @@ function NoteCard({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 text-lg font-semibold bg-transparent border-b-2 border-white/30 focus:border-indigo-400 outline-none text-white placeholder-gray-500"
+            className="flex-1 text-lg font-semibold bg-transparent border-b-2 border-zinc-300 dark:border-white/30 focus:border-indigo-400 outline-none text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-gray-500"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
-          <h3 className="text-lg font-semibold text-white truncate max-w-[70%]">{note.title}</h3>
+          <h3 className="text-lg font-semibold text-zinc-800 dark:text-white truncate max-w-[70%]">{note.title}</h3>
         )}
         <div className="flex items-center gap-2 shrink-0">
           <button
@@ -773,11 +787,11 @@ function NoteCard({
               e.stopPropagation();
               onTogglePin(note.id, 'note');
             }}
-            className="p-1.5 rounded-lg hover:bg-black/10 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
             title={note.is_pinned ? 'Unpin' : 'Pin'}
           >
             <svg
-              className={`w-4 h-4 ${note.is_pinned ? 'text-indigo-600 fill-current' : 'text-gray-700'}`}
+              className={`w-4 h-4 ${note.is_pinned ? 'text-indigo-600 fill-current' : 'text-zinc-600 dark:text-zinc-300'}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -796,10 +810,10 @@ function NoteCard({
                 e.stopPropagation();
                 setShowColorPicker(showColorPicker ? null : note.id);
               }}
-              className="p-1.5 rounded-lg hover:bg-black/10 transition-colors"
+              className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
               title="Change color"
             >
-              <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -809,7 +823,7 @@ function NoteCard({
               </svg>
             </button>
             {showColorPicker && (
-              <div className="absolute top-full right-0 mt-2 backdrop-blur-xl bg-white/90 rounded-xl shadow-2xl border border-white/40 p-3 z-50 grid grid-cols-4 gap-2">
+              <div className="absolute top-full right-0 mt-2 backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 rounded-xl shadow-2xl border border-zinc-200 dark:border-white/40 p-3 z-50 grid grid-cols-4 gap-2">
                 {NOTE_COLORS.map((color) => (
                   <button
                     key={color}
@@ -832,10 +846,10 @@ function NoteCard({
               e.stopPropagation();
               onShare(note.id);
             }}
-            className="p-1.5 rounded-lg hover:bg-black/10 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
             title="Share"
           >
-            <svg className="w-4 h-4 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -869,7 +883,7 @@ function NoteCard({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className="w-full min-h-[100px] bg-transparent text-white resize-none outline-none placeholder-gray-600"
+          className="w-full min-h-[100px] bg-transparent text-zinc-800 dark:text-white resize-none outline-none placeholder-zinc-500 dark:placeholder-gray-600"
           placeholder="Start typing..."
           onClick={(e) => e.stopPropagation()}
         />
@@ -879,9 +893,9 @@ function NoteCard({
             e.stopPropagation();
             setIsEditing(true);
           }}
-          className="text-gray-500 whitespace-pre-wrap break-words cursor-text"
+          className="text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap break-words cursor-text"
         >
-          {note.content || <span className="text-gray-500 italic">Click to write...</span>}
+          {note.content || <span className="text-zinc-500 dark:text-zinc-400 italic">Click to write...</span>}
         </div>
       )}
 
@@ -896,7 +910,7 @@ function NoteCard({
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); handleCancel(); }}
-            className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors"
+            className="px-3 py-1.5 bg-zinc-200 dark:bg-white/10 text-zinc-900 dark:text-white text-sm rounded-lg hover:bg-zinc-300 dark:hover:bg-white/20 transition-colors"
           >
             Cancel
           </button>
@@ -904,7 +918,7 @@ function NoteCard({
       )}
 
       {/* Footer */}
-      <div className="mt-3 pt-3 border-t border-gray-800/20 text-xs text-gray-600">
+      <div className="mt-3 pt-3 border-t border-zinc-300 dark:border-white/20 text-xs text-zinc-500 dark:text-zinc-400">
         {formatDate(note.updated_at)}
       </div>
     </motion.div>
@@ -961,7 +975,7 @@ function TaskCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className={`task-card relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl bg-white/10 border border-white/20 shadow-lg
+      className={`task-card relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/20 shadow-lg
         hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300
         ${task.status === 'completed' ? 'opacity-75' : ''}
         ${task.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
@@ -994,7 +1008,7 @@ function TaskCard({
                 </svg>
               </div>
             ) : (
-              <div className="w-6 h-6 border-2 border-white/40 rounded-full hover:border-indigo-400 hover:shadow-[0_0_15px_rgba(129,140,248,0.5)] transition-all" />
+              <div className="w-6 h-6 border-2 border-zinc-300 dark:border-white/40 rounded-full hover:border-indigo-400 hover:shadow-[0_0_15px_rgba(129,140,248,0.5)] transition-all" />
             )}
           </button>
 
@@ -1004,13 +1018,13 @@ function TaskCard({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-lg font-semibold bg-transparent border-b-2 border-white/30 focus:border-indigo-400 outline-none mb-2 text-white placeholder-white/40"
+                className="w-full text-lg font-semibold bg-transparent border-b-2 border-zinc-300 dark:border-white/30 focus:border-indigo-400 outline-none mb-2 text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-white/40"
                 autoFocus
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
               <h3
-                className={`text-lg font-semibold text-white mb-1 truncate max-w-[70%] ${localStatus === 'completed' ? 'line-through opacity-60' : ''
+                className={`text-lg font-semibold text-zinc-900 dark:text-white mb-1 truncate max-w-[70%] ${localStatus === 'completed' ? 'line-through opacity-60' : ''
                   }`}
               >
                 {task.title}
@@ -1021,7 +1035,7 @@ function TaskCard({
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full min-h-[60px] bg-transparent text-white/80 resize-none outline-none placeholder-white/30"
+                className="w-full min-h-[60px] bg-transparent text-zinc-700 dark:text-white/80 resize-none outline-none placeholder-zinc-400 dark:placeholder-white/30"
                 placeholder="Add description..."
                 onClick={(e) => e.stopPropagation()}
               />
@@ -1031,9 +1045,9 @@ function TaskCard({
                   e.stopPropagation();
                   setIsEditing(true);
                 }}
-                className="text-white/70 text-sm cursor-text"
+                className="text-zinc-600 dark:text-white/70 text-sm cursor-text"
               >
-                {task.description || <span className="italic text-white/40">Click to write...</span>}
+                {task.description || <span className="italic text-zinc-400 dark:text-white/40">Click to write...</span>}
               </div>
             )}
 
@@ -1054,16 +1068,16 @@ function TaskCard({
                   px-3 py-1 rounded-full text-xs font-medium outline-none border backdrop-blur-md
                   transition-all cursor-pointer
                   ${localStatus === 'pending'
-                    ? 'bg-yellow-500/30 text-yellow-200 border-yellow-400/30'
+                    ? 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-500/30 dark:text-yellow-200 dark:border-yellow-400/30'
                     : localStatus === 'in_progress'
-                      ? 'bg-blue-500/30 text-blue-200 border-blue-400/30'
-                      : 'bg-green-500/30 text-green-200 border-green-400/30'
+                      ? 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-500/30 dark:text-blue-200 dark:border-blue-400/30'
+                      : 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/30 dark:text-green-200 dark:border-green-400/30'
                   }
                 `}
               >
-                <option value="pending" className="bg-slate-900 text-yellow-300">Pending</option>
-                <option value="in_progress" className="bg-slate-900 text-blue-300">In Progress</option>
-                <option value="completed" className="bg-slate-900 text-green-300">Completed</option>
+                <option value="pending" className="bg-white dark:bg-slate-900 text-yellow-700 dark:text-yellow-300">Pending</option>
+                <option value="in_progress" className="bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300">In Progress</option>
+                <option value="completed" className="bg-white dark:bg-slate-900 text-green-700 dark:text-green-300">Completed</option>
               </select>
 
               {/* Priority */}
@@ -1076,20 +1090,20 @@ function TaskCard({
                   px-3 py-1 rounded-full text-xs font-medium outline-none border backdrop-blur-md
                   transition-all cursor-pointer
                   ${task.priority === 'low'
-                    ? 'bg-gray-500/30 text-gray-200 border-gray-400/30'
+                    ? 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-500/30 dark:text-gray-200 dark:border-gray-400/30'
                     : task.priority === 'medium'
-                      ? 'bg-orange-500/30 text-orange-200 border-orange-400/30'
-                      : 'bg-red-500/30 text-red-200 border-red-400/30'
+                      ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/30 dark:text-orange-200 dark:border-orange-400/30'
+                      : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/30 dark:text-red-200 dark:border-red-400/30'
                   }
                 `}
               >
-                <option value="low" className="bg-slate-900 text-gray-300">Low</option>
-                <option value="medium" className="bg-slate-900 text-orange-300">Medium</option>
-                <option value="high" className="bg-slate-900 text-red-300">High</option>
+                <option value="low" className="bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300">Low</option>
+                <option value="medium" className="bg-white dark:bg-slate-900 text-orange-700 dark:text-orange-300">Medium</option>
+                <option value="high" className="bg-white dark:bg-slate-900 text-red-700 dark:text-red-300">High</option>
               </select>
 
               {task.due_date && (
-                <span className="px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md bg-purple-500/30 text-purple-200 border border-purple-400/30">
+                <span className="px-3 py-1 rounded-full text-xs font-medium backdrop-blur-md bg-purple-100 text-purple-700 border border-purple-200 dark:bg-purple-500/30 dark:text-purple-200 dark:border dark:border-purple-400/30">
                   Due: {new Date(task.due_date).toLocaleDateString()}
                 </span>
               )}
@@ -1106,7 +1120,7 @@ function TaskCard({
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); handleCancel(); }}
-                  className="px-3 py-1.5 bg-white/10 text-white text-sm rounded-lg hover:bg-white/20 transition-colors"
+                  className="px-3 py-1.5 bg-zinc-200 dark:bg-white/10 text-zinc-900 dark:text-white text-sm rounded-lg hover:bg-zinc-300 dark:hover:bg-white/20 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1122,11 +1136,11 @@ function TaskCard({
               e.stopPropagation();
               onTogglePin(task.id, 'task');
             }}
-            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
             title={task.is_pinned ? 'Unpin' : 'Pin'}
           >
             <svg
-              className={`w-4 h-4 ${task.is_pinned ? 'text-indigo-400 fill-current' : 'text-white/70'}`}
+              className={`w-4 h-4 ${task.is_pinned ? 'text-indigo-400 fill-current' : 'text-zinc-600 dark:text-white/70'}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -1140,10 +1154,10 @@ function TaskCard({
               e.stopPropagation();
               onShare(task.id);
             }}
-            className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
             title="Share"
           >
-            <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-zinc-600 dark:text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
             </svg>
           </button>
@@ -1156,14 +1170,14 @@ function TaskCard({
             className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors"
             title="Delete"
           >
-            <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
           </button>
         </div>
       </div>
 
-      <div className="text-xs text-white/50 mt-3 pt-3 border-t border-white/20">
+      <div className="text-xs text-zinc-500 dark:text-white/50 mt-3 pt-3 border-t border-zinc-200 dark:border-white/20">
         Updated {formatDate(task.updated_at)}
       </div>
     </motion.div>

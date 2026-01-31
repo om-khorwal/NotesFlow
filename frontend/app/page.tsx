@@ -59,7 +59,7 @@ export default function Home() {
               <div className="rounded-3xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-slate-900 p-6 shadow-2xl">
                 <div className="h-72 w-full overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-100 via-white to-indigo-50 dark:from-indigo-950 dark:via-slate-900 dark:to-indigo-900 flex items-center justify-center">
                   <img
-                    src="/stationary.jpg"
+                    src="https://res.cloudinary.com/duljp6zqa/image/upload/v1769851788/stationary_snxjhv.jpg"
                     alt="Notes and tasks preview"
                     className="h-full w-full"
                   />

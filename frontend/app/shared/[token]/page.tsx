@@ -83,7 +83,7 @@ export default function SharedItemPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-800 dark:bg-slate-950 py-8 px-4">
+    <div className="min-h-screen bg-gray-400  py-8 px-4">
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-8">
         <Link

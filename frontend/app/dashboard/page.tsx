@@ -512,7 +512,7 @@ export default function DashboardPage() {
                   )}
                 </motion.div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                   <AnimatePresence>
                     {sortedNotes.map((note) => (
                       <NoteCard
@@ -763,7 +763,7 @@ function NoteCard({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`note-card relative overflow-hidden rounded-2xl p-5 cursor-pointer backdrop-blur-xl border border-zinc-200 dark:border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
+      className={`note-card relative overflow-hidden rounded-2xl p-7 min-h-[220px] scale-[1.05] cursor-pointer backdrop-blur-xl border border-zinc-200 dark:border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
       onClick={() => !isEditing && setIsEditing(true)}
       style={{ backgroundColor: cardBg }}
     >
@@ -1153,7 +1153,7 @@ function TaskCard({
             onClick={(e) => {
               e.stopPropagation();
               onShare(task.id);
-            }}
+            }}  
             className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
             title="Share"
           >

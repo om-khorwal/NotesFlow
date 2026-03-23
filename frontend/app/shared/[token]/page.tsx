@@ -51,7 +51,7 @@ export default function SharedItemPage() {
 
   if (error || !item) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-800 dark:bg-slate-950 px-4">
+      <div className="min-h-screen flex items-center justify-center bg-gray-500 dark:bg-slate-950 px-4">
         <motion.div
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -83,7 +83,7 @@ export default function SharedItemPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8 px-4">
+    <div className="min-h-screen bg-gray-800 dark:bg-slate-950 py-8 px-4">
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-8">
         <Link

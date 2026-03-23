@@ -83,7 +83,7 @@ export default function SharedItemPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-400  py-8 px-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 py-8 px-4">
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-8">
         <Link
@@ -143,8 +143,7 @@ export default function SharedItemPage() {
       >
         {item.type === 'note' ? (
           <div
-            className="rounded-2xl p-8 shadow-lg"
-            style={{ backgroundColor: item.background_color }}
+            className="rounded-2xl p-8 shadow-lg dark:bg-slate-900 bg-white "
           >
             <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-6">{item.title}</h2>
             {item.content ? (

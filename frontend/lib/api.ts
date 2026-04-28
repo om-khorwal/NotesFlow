@@ -175,7 +175,7 @@ export const notesAPI = {
 
     const { error } = await supabase
       .from('notes')
-      .update({ share_token: token, is_public: true, share_expires_at: expiresAt })
+      .update({ share_token: token, is_public: true })
       .eq('id', id)
 
     if (error) throw new APIError(500, error.message)
@@ -192,7 +192,7 @@ export const notesAPI = {
   async revokeShareLink(id: number) {
     const { error } = await supabase
       .from('notes')
-      .update({ share_token: null, is_public: false, share_expires_at: null })
+      .update({ share_token: null, is_public: false })
       .eq('id', id)
 
     if (error) throw new APIError(500, error.message)
@@ -341,7 +341,7 @@ export const tasksAPI = {
 
     const { error } = await supabase
       .from('tasks')
-      .update({ share_token: token, is_public: true, share_expires_at: expiresAt })
+      .update({ share_token: token, is_public: true })
       .eq('id', id)
 
     if (error) throw new APIError(500, error.message)
@@ -358,7 +358,7 @@ export const tasksAPI = {
   async revokeShareLink(id: number) {
     const { error } = await supabase
       .from('tasks')
-      .update({ share_token: null, is_public: false, share_expires_at: null })
+      .update({ share_token: null, is_public: false })
       .eq('id', id)
 
     if (error) throw new APIError(500, error.message)

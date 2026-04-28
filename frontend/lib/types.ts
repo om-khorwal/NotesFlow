@@ -11,7 +11,7 @@ export interface Note {
   background_color?: string
   is_pinned?: boolean
   share_token: string | null
-  share_expires_at: string | null
+  share_expires_at?: string | null
   is_public: boolean
   created_at: string
   updated_at?: string

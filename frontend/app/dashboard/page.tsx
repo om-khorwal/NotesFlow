@@ -6,9 +6,10 @@ import { requireAuth, getUser, setUser as setAuthUser } from '@/lib/auth';
 import { notesAPI, tasksAPI, authAPI } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import type { Note, Task } from '@/lib/types';
-import { formatDate, NOTE_COLORS, adjustColorForDarkMode, debounce } from '@/lib/utils';
-import { getTheme } from '@/lib/theme';
+import { formatDate, debounce } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import NoteEditor from './NoteEditor';
+import NoteCard from './NoteCard';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -18,11 +19,12 @@ export default function DashboardPage() {
   const [taskStats, setTaskStats] = useState({ pending: 0, in_progress: 0, completed: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<Note | Task | null>(null);
-  const [showColorPicker, setShowColorPicker] = useState<number | null>(null);
   const [username, setUsername] = useState<string>('User');
   const [pendingDelete, setPendingDelete] = useState<{ type: 'note' | 'task'; id: number; title: string } | null>(null);
+
+  // Note editor modal
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [isNoteEditorOpen, setIsNoteEditorOpen] = useState(false);
 
 
   useEffect(() => {
@@ -69,7 +71,8 @@ export default function DashboardPage() {
       const response = await notesAPI.create('Untitled Note', '');
       if (response.success && response.data) {
         setNotes([response.data, ...notes]);
-        setEditingItem(response.data);
+        setSelectedNote(response.data);
+        setIsNoteEditorOpen(true);
         toast.success('Note created');
       }
     } catch (error: any) {
@@ -85,7 +88,6 @@ export default function DashboardPage() {
       });
       if (response.success && response.data) {
         setTasks([response.data, ...tasks]);
-        setEditingItem(response.data);
         toast.success('Task created');
       } else {
         toast.error(response.message || 'Failed to create task');
@@ -117,14 +119,7 @@ export default function DashboardPage() {
 
         const response = await tasksAPI.update(
           id,
-          payload as Partial<{
-            title: string;
-            description: string;
-            status: string;
-            priority: string;
-            due_date: string;
-            background_color: string;
-          }>
+          payload as Partial<{ title: string; status: string; due_date: string | null }>
         );
 
         if (response.success) {
@@ -207,25 +202,6 @@ export default function DashboardPage() {
     setPendingDelete(null);
   };
 
-
-  const handleSetColor = async (id: number, color: string, type: 'note' | 'task') => {
-    try {
-      if (type === 'note') {
-        const response = await notesAPI.setColor(id, color);
-        if (response.success) {
-          setNotes(notes.map((n) => (n.id === id ? { ...n, background_color: color } : n)));
-        }
-      } else {
-        const response = await tasksAPI.setColor(id, color);
-        if (response.success) {
-          setTasks(tasks.map((t) => (t.id === id ? { ...t, background_color: color } : t)));
-        }
-      }
-      setShowColorPicker(null);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to set color');
-    }
-  };
 
   const handleShareNote = async (id: number) => {
     try {
@@ -494,9 +470,10 @@ export default function DashboardPage() {
                       <NoteCard
                         key={note.id}
                         note={note}
-                        onUpdate={handleUpdateNote}
-                        onDelete={handleDeleteNote}
-                        onShare={handleShareNote}
+                        onClick={() => {
+                          setSelectedNote(note);
+                          setIsNoteEditorOpen(true);
+                        }}
                       />
                     ))}
                   </AnimatePresence>
@@ -552,6 +529,19 @@ export default function DashboardPage() {
           </div>
         </main>
       </div>
+
+      {/* Note Editor Modal */}
+      <NoteEditor
+        note={selectedNote}
+        isOpen={isNoteEditorOpen}
+        onClose={() => {
+          setIsNoteEditorOpen(false);
+          setSelectedNote(null);
+        }}
+        onSave={handleUpdateNote}
+        onDelete={handleDeleteNote}
+        onShare={handleShareNote}
+      />
     </>
   );
 }
@@ -669,163 +659,6 @@ function DeleteDialog({ isOpen, type, title, onConfirm, onCancel }: DeleteDialog
         </>
       )}
     </AnimatePresence>
-  );
-}
-
-// Note Card Component
-function NoteCard({
-  note,
-  onUpdate,
-  onDelete,
-  onShare,
-}: {
-  note: Note;
-  onUpdate: (id: number, data: Partial<Note>) => void;
-  onDelete: (id: number) => void;
-  onShare: (id: number) => void;
-}) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(note.title);
-  const [content, setContent] = useState(note.content);
-  const [isDark, setIsDark] = useState(false);
-
-  // Reset local state when note changes
-  useEffect(() => {
-    setTitle(note.title);
-    setContent(note.content);
-  }, [note.title, note.content]);
-
-  // Track theme for note card background
-  useEffect(() => {
-    setIsDark(getTheme() === 'dark');
-    const observer = new MutationObserver(() => {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
-
-  const handleSave = () => {
-    if (title.trim() !== note.title || content.trim() !== note.content) {
-      onUpdate(note.id, { title: title.trim() || 'Untitled', content: content.trim() });
-    }
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setTitle(note.title);
-    setContent(note.content);
-    setIsEditing(false);
-  };
-
-  const cardBg = isDark ? adjustColorForDarkMode(note.background_color || '#FFFFFF') : (note.background_color || '#FFFFFF');
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className="note-card relative overflow-hidden rounded-2xl p-7 min-h-[220px] scale-[1.05] cursor-pointer backdrop-blur-xl border border-zinc-200 dark:border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300"
-      onClick={() => !isEditing && setIsEditing(true)}
-      style={{ backgroundColor: cardBg }}
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-3">
-        {isEditing ? (
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="flex-1 text-lg font-semibold bg-transparent border-b-2 border-zinc-300 dark:border-white/30 focus:border-indigo-400 outline-none text-zinc-800 dark:text-white placeholder-zinc-500 dark:placeholder-gray-500"
-            autoFocus
-            onClick={(e) => e.stopPropagation()}
-          />
-        ) : (
-          <h3 className="text-lg font-semibold text-zinc-800 dark:text-white truncate max-w-[70%]">{note.title}</h3>
-        )}
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onShare(note.id);
-            }}
-            className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-            title="Share"
-          >
-            <svg className="w-4 h-4 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-              />
-            </svg>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(note.id);
-            }}
-            className="p-1.5 rounded-lg hover:bg-red-500/20 transition-colors"
-            title="Delete"
-          >
-            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      {/* Content */}
-      {isEditing ? (
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          className="w-full min-h-[100px] bg-transparent text-zinc-800 dark:text-white resize-none outline-none placeholder-zinc-500 dark:placeholder-gray-600"
-          placeholder="Start typing..."
-          onClick={(e) => e.stopPropagation()}
-        />
-      ) : (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsEditing(true);
-          }}
-          className="text-zinc-600 dark:text-zinc-300 whitespace-pre-wrap break-words cursor-text"
-        >
-          {note.content || <span className="text-zinc-500 dark:text-zinc-400 italic">Click to write...</span>}
-        </div>
-      )}
-
-      {/* Save/Cancel Buttons (visible when editing) */}
-      {isEditing && (
-        <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleSave(); }}
-            className="px-3 py-1.5 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-500 transition-colors"
-          >
-            Save
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); handleCancel(); }}
-            className="px-3 py-1.5 bg-zinc-200 dark:bg-white/10 text-zinc-900 dark:text-white text-sm rounded-lg hover:bg-zinc-300 dark:hover:bg-white/20 transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {/* Footer */}
-      <div className="mt-3 pt-3 border-t border-zinc-300 dark:border-white/20 text-xs text-zinc-500 dark:text-zinc-400">
-        {formatDate(note.created_at)}
-      </div>
-    </motion.div>
   );
 }
 

@@ -103,7 +103,6 @@ export const notesAPI = {
   async create(
     title: string,
     content: string = '',
-    background_color?: string,
   ) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new APIError(401, 'Not authenticated')
@@ -114,7 +113,6 @@ export const notesAPI = {
         user_id: user.id,
         title,
         content,
-        background_color: background_color ?? '#FFFFFF',
       })
       .select()
       .single()
@@ -158,11 +156,11 @@ export const notesAPI = {
   },
 
   async setColor(id: number, color: string) {
+    // Background color not supported - column doesn't exist
     const { data, error } = await supabase
       .from('notes')
-      .update({ background_color: color })
+      .select('*')
       .eq('id', id)
-      .select()
       .single()
 
     if (error) throw new APIError(500, error.message)
@@ -254,11 +252,8 @@ export const tasksAPI = {
 
   async create(taskData: {
     title: string
-    description?: string
     status?: string
-    priority?: string
     due_date?: string
-    background_color?: string
   }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new APIError(401, 'Not authenticated')
@@ -268,11 +263,7 @@ export const tasksAPI = {
       .insert({
         user_id: user.id,
         title: taskData.title,
-        description: taskData.description ?? '',
         status: taskData.status ?? 'pending',
-        priority: taskData.priority ?? 'medium',
-        due_date: taskData.due_date ?? null,
-        background_color: taskData.background_color ?? '#FFFFFF',
       })
       .select()
       .single()
@@ -285,12 +276,8 @@ export const tasksAPI = {
     id: number,
     taskData: Partial<{
       title: string
-      description: string
       status: string
-      priority: string
       due_date: string | null
-      background_color: string
-      is_pinned: boolean
     }>,
   ) {
     const updatePayload: Record<string, unknown> = { ...taskData }
@@ -335,11 +322,11 @@ export const tasksAPI = {
   },
 
   async setColor(id: number, color: string) {
+    // Background color not supported - column doesn't exist
     const { data, error } = await supabase
       .from('tasks')
-      .update({ background_color: color })
+      .select('*')
       .eq('id', id)
-      .select()
       .single()
 
     if (error) throw new APIError(500, error.message)

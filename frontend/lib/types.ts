@@ -8,7 +8,7 @@ export interface Note {
   user_id: string
   title: string
   content: string
-  background_color: string
+  background_color?: string
   is_pinned?: boolean
   share_token: string | null
   share_expires_at: string | null
@@ -21,16 +21,16 @@ export interface Task {
   id: number
   user_id: string
   title: string
-  description: string
+  description?: string
   status: 'pending' | 'in_progress' | 'completed'
-  priority: 'low' | 'medium' | 'high'
-  due_date: string | null
-  background_color: string
+  priority?: 'low' | 'medium' | 'high'
+  due_date?: string | null
+  background_color?: string
   is_pinned?: boolean
-  share_token: string | null
-  share_expires_at: string | null
-  is_public: boolean
-  completed_at: string | null
+  share_token?: string | null
+  share_expires_at?: string | null
+  is_public?: boolean
+  completed_at?: string | null
   created_at: string
   updated_at?: string
 }

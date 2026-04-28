@@ -82,7 +82,6 @@ export default function DashboardPage() {
       const response = await tasksAPI.create({
         title: 'New Task',
         status: 'pending',
-        priority: 'medium',
       });
       if (response.success && response.data) {
         setTasks([response.data, ...tasks]);
@@ -262,8 +261,7 @@ export default function DashboardPage() {
 
   const filteredTasks = tasks.filter(
     (task) =>
-      task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.description.toLowerCase().includes(searchQuery.toLowerCase())
+      task.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Sort by created_at (newest first)
@@ -498,10 +496,7 @@ export default function DashboardPage() {
                         note={note}
                         onUpdate={handleUpdateNote}
                         onDelete={handleDeleteNote}
-                        onSetColor={handleSetColor}
                         onShare={handleShareNote}
-                        showColorPicker={showColorPicker === note.id}
-                        setShowColorPicker={setShowColorPicker}
                       />
                     ))}
                   </AnimatePresence>
@@ -682,18 +677,12 @@ function NoteCard({
   note,
   onUpdate,
   onDelete,
-  onSetColor,
   onShare,
-  showColorPicker,
-  setShowColorPicker,
 }: {
   note: Note;
   onUpdate: (id: number, data: Partial<Note>) => void;
   onDelete: (id: number) => void;
-  onSetColor: (id: number, color: string, type: 'note' | 'task') => void;
   onShare: (id: number) => void;
-  showColorPicker: boolean;
-  setShowColorPicker: (id: number | null) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(note.title);
@@ -729,7 +718,7 @@ function NoteCard({
     setIsEditing(false);
   };
 
-  const cardBg = isDark ? adjustColorForDarkMode(note.background_color) : note.background_color;
+  const cardBg = isDark ? adjustColorForDarkMode(note.background_color || '#FFFFFF') : (note.background_color || '#FFFFFF');
 
   return (
     <motion.div
@@ -756,43 +745,6 @@ function NoteCard({
           <h3 className="text-lg font-semibold text-zinc-800 dark:text-white truncate max-w-[70%]">{note.title}</h3>
         )}
         <div className="flex items-center gap-2 shrink-0">
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowColorPicker(showColorPicker ? null : note.id);
-              }}
-              className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-              title="Change color"
-            >
-              <svg className="w-4 h-4 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"
-                />
-              </svg>
-            </button>
-            {showColorPicker && (
-              <div className="absolute top-full right-0 mt-2 backdrop-blur-xl bg-white/90 dark:bg-slate-900/90 rounded-xl shadow-2xl border border-zinc-200 dark:border-white/40 p-3 z-50 grid grid-cols-4 gap-2">
-                {NOTE_COLORS.map((color) => (
-                  <button
-                    key={color}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSetColor(note.id, color, 'note');
-                    }}
-                    className="w-8 h-8 rounded-full border-2 hover:scale-110 transition-transform shadow-md"
-                    style={{
-                      backgroundColor: color,
-                      borderColor: note.background_color === color ? '#818cf8' : 'rgba(255,255,255,0.5)',
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -893,21 +845,18 @@ function TaskCard({
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
-  const [description, setDescription] = useState(task.description);
   const [localStatus, setLocalStatus] = useState<Task['status']>(task.status);
 
   // Reset local state when task changes
   useEffect(() => {
     setLocalStatus(task.status);
     setTitle(task.title);
-    setDescription(task.description);
-  }, [task.status, task.title, task.description]);
+  }, [task.status, task.title]);
 
   const handleSave = () => {
-    if (title.trim() !== task.title || description.trim() !== task.description) {
+    if (title.trim() !== task.title) {
       onUpdate(task.id, {
         title: title.trim() || 'Untitled',
-        description: description.trim(),
       });
     }
     setIsEditing(false);
@@ -915,7 +864,6 @@ function TaskCard({
 
   const handleCancel = () => {
     setTitle(task.title);
-    setDescription(task.description);
     setIsEditing(false);
   };
 
@@ -980,26 +928,6 @@ function TaskCard({
               </h3>
             )}
 
-            {isEditing ? (
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full min-h-[60px] bg-transparent text-zinc-700 dark:text-white/80 resize-none outline-none placeholder-zinc-400 dark:placeholder-white/30"
-                placeholder="Add description..."
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
-              <div
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsEditing(true);
-                }}
-                className="text-zinc-600 dark:text-white/70 text-sm cursor-text"
-              >
-                {task.description || <span className="italic text-zinc-400 dark:text-white/40">Click to write...</span>}
-              </div>
-            )}
-
             {/* Tags */}
             <div
               className="flex items-center gap-2 mt-3 flex-wrap"
@@ -1027,28 +955,6 @@ function TaskCard({
                 <option value="pending" className="bg-white dark:bg-slate-900 text-yellow-700 dark:text-yellow-300">Pending</option>
                 <option value="in_progress" className="bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300">In Progress</option>
                 <option value="completed" className="bg-white dark:bg-slate-900 text-green-700 dark:text-green-300">Completed</option>
-              </select>
-
-              {/* Priority */}
-              <select
-                value={task.priority}
-                onChange={(e) =>
-                  onQuickUpdate(task.id, { priority: e.target.value as Task['priority'] })
-                }
-                className={`
-                  px-3 py-1 rounded-full text-xs font-medium outline-none border backdrop-blur-md
-                  transition-all cursor-pointer
-                  ${task.priority === 'low'
-                    ? 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-500/30 dark:text-gray-200 dark:border-gray-400/30'
-                    : task.priority === 'medium'
-                      ? 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-500/30 dark:text-orange-200 dark:border-orange-400/30'
-                      : 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/30 dark:text-red-200 dark:border-red-400/30'
-                  }
-                `}
-              >
-                <option value="low" className="bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300">Low</option>
-                <option value="medium" className="bg-white dark:bg-slate-900 text-orange-700 dark:text-orange-300">Medium</option>
-                <option value="high" className="bg-white dark:bg-slate-900 text-red-700 dark:text-red-300">High</option>
               </select>
 
               {task.due_date && (

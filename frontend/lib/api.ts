@@ -1,294 +1,568 @@
 /**
- * API Service - All backend API calls
+ * API Service — Supabase-only. No FastAPI backend required.
  */
 
-import { getToken, removeToken, removeUser } from './auth';
+import { supabase } from './supabase'
+import { setUser, removeUser, mapSupabaseUser } from './auth'
+import type { Note, Task, UserProfile } from './types'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+// ─── helpers ────────────────────────────────────────────────────────────────
 
-export interface APIResponse<T = any> {
-  success: boolean;
-  message?: string;
-  data?: T;
-  errors?: any[];
+function generateShareToken(): string {
+  const arr = new Uint8Array(32)
+  crypto.getRandomValues(arr)
+  return Array.from(arr, b => b.toString(16).padStart(2, '0')).join('')
 }
 
 class APIError extends Error {
   constructor(
     public status: number,
-    public message: string,
-    public data?: any
+    message: string,
   ) {
-    super(message);
-    this.name = 'APIError';
+    super(message)
+    this.name = 'APIError'
   }
 }
 
-async function request<T = any>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<APIResponse<T>> {
-  const url = `${API_BASE_URL}${endpoint}`;
+// ─── auth ────────────────────────────────────────────────────────────────────
 
-  // Get token from auth module (in-memory + cookie fallback)
-  const token = getToken();
-
-  const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  try {
-    const response = await fetch(url, config);
-
-    // Try to parse JSON, handle non-JSON responses
-    let data;
-    try {
-      data = await response.json();
-    } catch (jsonError) {
-      // Response is not JSON
-      if (!response.ok) {
-        throw new APIError(response.status, `Server error: ${response.statusText}`);
-      }
-      throw new APIError(0, 'Invalid response from server');
-    }
-
-    if (!response.ok) {
-      // Handle 401 - redirect to login
-      if (response.status === 401 && typeof window !== 'undefined') {
-        removeToken();
-        removeUser();
-        window.location.href = '/login';
-        throw new APIError(401, 'Unauthorized');
-      }
-      throw new APIError(response.status, data.detail || data.message || 'Request failed', data);
-    }
-
-    return data;
-  } catch (error) {
-    if (error instanceof APIError) {
-      throw error;
-    }
-    // Provide more context for network errors
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    throw new APIError(0, `Network error: ${errorMessage}`);
-  }
-}
-
-// Auth API
 export const authAPI = {
   async login(email: string, password: string) {
-    return request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+    if (error) throw new APIError(401, error.message)
+    const user = mapSupabaseUser(data.user)
+    setUser(user)
+    return { success: true, data: { user } }
   },
 
   async register(username: string, email: string, password: string) {
-    return request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ username, email, password }),
-    });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { username } },
+    })
+    if (error) throw new APIError(400, error.message)
+    if (!data.user) throw new APIError(400, 'Registration failed')
+
+    const user = mapSupabaseUser(data.user)
+    setUser(user)
+
+    // Ensure profile row exists (trigger should create it, but guard anyway)
+    await supabase
+      .from('user_profiles')
+      .upsert({ user_id: data.user.id }, { onConflict: 'user_id' })
+
+    return { success: true, data: { user } }
   },
 
   async getProfile() {
-    return request('/auth/profile');
+    const { data: { user: authUser }, error } = await supabase.auth.getUser()
+    if (error || !authUser) throw new APIError(401, 'Not authenticated')
+    const user = mapSupabaseUser(authUser)
+    setUser(user)
+    return { success: true, data: { user } }
   },
 
   async logout() {
-    return request('/auth/logout', { method: 'POST' });
+    removeUser()
+    await supabase.auth.signOut()
+    return { success: true }
   },
-};
+}
 
-// Notes API
+// ─── notes ───────────────────────────────────────────────────────────────────
+
 export const notesAPI = {
-  async getAll(params: Record<string, any> = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return request(`/notes${queryString ? '?' + queryString : ''}`);
+  async getAll(_params: Record<string, any> = {}) {
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .order('is_pinned', { ascending: false })
+      .order('updated_at', { ascending: false })
+
+    if (error) throw new APIError(500, error.message)
+    return {
+      success: true,
+      data: { notes: (data ?? []) as Note[], total: data?.length ?? 0 },
+    }
   },
 
   async getById(id: number) {
-    return request(`/notes/${id}`);
+    const { data, error } = await supabase
+      .from('notes')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw new APIError(404, 'Note not found')
+    return { success: true, data: data as Note }
   },
 
-  async create(title: string, content: string = '', background_color?: string) {
-    return request('/notes', {
-      method: 'POST',
-      body: JSON.stringify({ title, content, background_color }),
-    });
+  async create(
+    title: string,
+    content: string = '',
+    background_color?: string,
+  ) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new APIError(401, 'Not authenticated')
+
+    const { data, error } = await supabase
+      .from('notes')
+      .insert({
+        user_id: user.id,
+        title,
+        content,
+        background_color: background_color ?? '#FFFFFF',
+      })
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Note created successfully', data: data as Note }
   },
 
-  async update(id: number, data: Partial<{ title: string; content: string; background_color: string; is_pinned: boolean }>) {
-    return request(`/notes/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async update(
+    id: number,
+    noteData: Partial<Pick<Note, 'title' | 'content' | 'background_color' | 'is_pinned'>>,
+  ) {
+    const { data, error } = await supabase
+      .from('notes')
+      .update(noteData)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Note updated successfully', data: data as Note }
   },
 
   async delete(id: number) {
-    return request(`/notes/${id}`, { method: 'DELETE' });
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Note deleted successfully' }
   },
 
   async togglePin(id: number) {
-    return request(`/notes/${id}/pin`, { method: 'PUT' });
+    const { data: current } = await supabase
+      .from('notes')
+      .select('is_pinned')
+      .eq('id', id)
+      .single()
+
+    const { data, error } = await supabase
+      .from('notes')
+      .update({ is_pinned: !current?.is_pinned })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, data: data as Note }
   },
 
   async setColor(id: number, color: string) {
-    return request(`/notes/${id}/color`, {
-      method: 'PUT',
-      body: JSON.stringify({ color }),
-    });
+    const { data, error } = await supabase
+      .from('notes')
+      .update({ background_color: color })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, data: data as Note }
   },
 
   async createShareLink(id: number, expiresInDays?: number) {
-    const params = expiresInDays ? `?expires_in_days=${expiresInDays}` : '';
-    return request(`/notes/${id}/share${params}`, { method: 'POST' });
+    const token = generateShareToken()
+    const expiresAt = expiresInDays
+      ? new Date(Date.now() + expiresInDays * 86_400_000).toISOString()
+      : null
+
+    const { error } = await supabase
+      .from('notes')
+      .update({ share_token: token, is_public: true, share_expires_at: expiresAt })
+      .eq('id', id)
+
+    if (error) throw new APIError(500, error.message)
+    return {
+      success: true,
+      data: {
+        share_token: token,
+        share_url: `/shared/${token}`,
+        expires_at: expiresAt,
+      },
+    }
   },
 
   async revokeShareLink(id: number) {
-    return request(`/notes/${id}/share`, { method: 'DELETE' });
-  },
-};
+    const { error } = await supabase
+      .from('notes')
+      .update({ share_token: null, is_public: false, share_expires_at: null })
+      .eq('id', id)
 
-// Tasks API
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Share link revoked successfully' }
+  },
+}
+
+// ─── tasks ───────────────────────────────────────────────────────────────────
+
 export const tasksAPI = {
-  async getAll(params: Record<string, any> = {}) {
-    const queryString = new URLSearchParams(params).toString();
-    return request(`/tasks${queryString ? '?' + queryString : ''}`);
+  async getAll(_params: Record<string, any> = {}) {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .order('is_pinned', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (error) throw new APIError(500, error.message)
+    return {
+      success: true,
+      data: { tasks: (data ?? []) as Task[], total: data?.length ?? 0 },
+    }
   },
 
   async getStats() {
-    return request('/tasks/stats');
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('status, priority')
+
+    if (error) throw new APIError(500, error.message)
+
+    const statusCounts = { pending: 0, in_progress: 0, completed: 0 }
+    const priorityCounts = { low: 0, medium: 0, high: 0 }
+
+    for (const t of data ?? []) {
+      if (t.status in statusCounts)
+        statusCounts[t.status as keyof typeof statusCounts]++
+      if (t.priority in priorityCounts)
+        priorityCounts[t.priority as keyof typeof priorityCounts]++
+    }
+
+    return {
+      success: true,
+      data: { total: data?.length ?? 0, statusCounts, priorityCounts },
+    }
   },
 
   async getById(id: number) {
-    return request(`/tasks/${id}`);
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (error) throw new APIError(404, 'Task not found')
+    return { success: true, data: data as Task }
   },
 
-  async create(data: {
-    title: string;
-    description?: string;
-    status?: string;
-    priority?: string;
-    due_date?: string;
-    background_color?: string;
+  async create(taskData: {
+    title: string
+    description?: string
+    status?: string
+    priority?: string
+    due_date?: string
+    background_color?: string
   }) {
-    return request('/tasks', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new APIError(401, 'Not authenticated')
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .insert({
+        user_id: user.id,
+        title: taskData.title,
+        description: taskData.description ?? '',
+        status: taskData.status ?? 'pending',
+        priority: taskData.priority ?? 'medium',
+        due_date: taskData.due_date ?? null,
+        background_color: taskData.background_color ?? '#FFFFFF',
+      })
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Task created successfully', data: data as Task }
   },
 
-  async update(id: number, data: Partial<{
-    title: string;
-    description: string;
-    status: string;
-    priority: string;
-    due_date: string;
-    background_color: string;
-    is_pinned: boolean;
-  }>) {
-    return request(`/tasks/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+  async update(
+    id: number,
+    taskData: Partial<{
+      title: string
+      description: string
+      status: string
+      priority: string
+      due_date: string | null
+      background_color: string
+      is_pinned: boolean
+    }>,
+  ) {
+    const updatePayload: Record<string, unknown> = { ...taskData }
+
+    // Mirror server-side completed_at logic
+    if ('status' in taskData) {
+      if (taskData.status === 'completed') {
+        updatePayload.completed_at = new Date().toISOString()
+      } else {
+        updatePayload.completed_at = null
+      }
+    }
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .update(updatePayload)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Task updated successfully', data: data as Task }
   },
 
   async delete(id: number) {
-    return request(`/tasks/${id}`, { method: 'DELETE' });
+    const { error } = await supabase.from('tasks').delete().eq('id', id)
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Task deleted successfully' }
   },
 
   async togglePin(id: number) {
-    return request(`/tasks/${id}/pin`, { method: 'PUT' });
+    const { data: current } = await supabase
+      .from('tasks')
+      .select('is_pinned')
+      .eq('id', id)
+      .single()
+
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ is_pinned: !current?.is_pinned })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, data: data as Task }
   },
 
   async setColor(id: number, color: string) {
-    return request(`/tasks/${id}/color`, {
-      method: 'PUT',
-      body: JSON.stringify({ color }),
-    });
+    const { data, error } = await supabase
+      .from('tasks')
+      .update({ background_color: color })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, data: data as Task }
   },
 
   async createShareLink(id: number, expiresInDays?: number) {
-    const params = expiresInDays ? `?expires_in_days=${expiresInDays}` : '';
-    return request(`/tasks/${id}/share${params}`, { method: 'POST' });
+    const token = generateShareToken()
+    const expiresAt = expiresInDays
+      ? new Date(Date.now() + expiresInDays * 86_400_000).toISOString()
+      : null
+
+    const { error } = await supabase
+      .from('tasks')
+      .update({ share_token: token, is_public: true, share_expires_at: expiresAt })
+      .eq('id', id)
+
+    if (error) throw new APIError(500, error.message)
+    return {
+      success: true,
+      data: {
+        share_token: token,
+        share_url: `/shared/${token}`,
+        expires_at: expiresAt,
+      },
+    }
   },
 
   async revokeShareLink(id: number) {
-    return request(`/tasks/${id}/share`, { method: 'DELETE' });
-  },
-};
+    const { error } = await supabase
+      .from('tasks')
+      .update({ share_token: null, is_public: false, share_expires_at: null })
+      .eq('id', id)
 
-// Profile API
+    if (error) throw new APIError(500, error.message)
+    return { success: true, message: 'Share link revoked successfully' }
+  },
+}
+
+// ─── profile ─────────────────────────────────────────────────────────────────
+
 export const profileAPI = {
   async get() {
-    return request('/profile');
+    const { data: { user: authUser }, error: authError } =
+      await supabase.auth.getUser()
+    if (authError || !authUser) throw new APIError(401, 'Not authenticated')
+
+    // Ensure profile row exists
+    await supabase
+      .from('user_profiles')
+      .upsert({ user_id: authUser.id }, { onConflict: 'user_id' })
+
+    const { data: profile, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', authUser.id)
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+
+    return {
+      success: true,
+      data: {
+        user: mapSupabaseUser(authUser),
+        profile: profile as UserProfile,
+      },
+    }
   },
 
-  async update(data: {
-    avatar_url?: string;
-    cover_photo_url?: string;
-    display_name?: string;
-    bio?: string;
-    linkedin_url?: string;
-    github_url?: string;
-    twitter_url?: string;
-    website_url?: string;
+  async update(profileData: {
+    display_name?: string
+    bio?: string
+    avatar_url?: string
+    cover_photo_url?: string
+    linkedin_url?: string
+    github_url?: string
+    twitter_url?: string
+    instagram_url?: string
+    website_url?: string
   }) {
-    return request('/profile', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new APIError(401, 'Not authenticated')
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .update(profileData)
+      .eq('user_id', user.id)
+      .select()
+      .single()
+
+    if (error) throw new APIError(500, error.message)
+    return { success: true, data: { profile: data as UserProfile } }
   },
 
   async uploadAvatar(file: File) {
-    const token = getToken();
-    const formData = new FormData();
-    formData.append('file', file);
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new APIError(401, 'Not authenticated')
 
-    const response = await fetch(`${API_BASE_URL}/profile/upload-avatar`, {
-      method: 'POST',
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: formData,
-    });
-    return response.json();
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `avatars/${user.id}/avatar.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('profiles')
+      .upload(path, file, { upsert: true, contentType: file.type })
+
+    if (uploadError) throw new APIError(500, uploadError.message)
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profiles')
+      .getPublicUrl(path)
+
+    // Cache-bust so the browser fetches the new image
+    const avatarUrl = `${publicUrl}?t=${Date.now()}`
+
+    await supabase
+      .from('user_profiles')
+      .update({ avatar_url: avatarUrl })
+      .eq('user_id', user.id)
+
+    return { success: true, data: { avatar_url: avatarUrl } }
   },
 
   async uploadCover(file: File) {
-    const token = getToken();
-    const formData = new FormData();
-    formData.append('file', file);
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new APIError(401, 'Not authenticated')
 
-    const response = await fetch(`${API_BASE_URL}/profile/upload-cover`, {
-      method: 'POST',
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-      },
-      body: formData,
-    });
-    return response.json();
+    const ext = file.name.split('.').pop() ?? 'jpg'
+    const path = `covers/${user.id}/cover.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('profiles')
+      .upload(path, file, { upsert: true, contentType: file.type })
+
+    if (uploadError) throw new APIError(500, uploadError.message)
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('profiles')
+      .getPublicUrl(path)
+
+    const coverUrl = `${publicUrl}?t=${Date.now()}`
+
+    await supabase
+      .from('user_profiles')
+      .update({ cover_photo_url: coverUrl })
+      .eq('user_id', user.id)
+
+    return { success: true, data: { cover_photo_url: coverUrl } }
   },
-};
+}
 
-// Share API
+// ─── share ────────────────────────────────────────────────────────────────────
+
 export const shareAPI = {
   async getByToken(token: string) {
-    return request(`/share/${token}`);
+    // Try notes first (RLS enforces is_public + expiry check)
+    const { data: note } = await supabase
+      .from('notes')
+      .select('title, content, background_color, created_at')
+      .eq('share_token', token)
+      .eq('is_public', true)
+      .maybeSingle()
+
+    if (note) {
+      return {
+        success: true,
+        data: {
+          type: 'note' as const,
+          title: note.title,
+          content: note.content,
+          background_color: note.background_color,
+          created_at: note.created_at,
+        },
+      }
+    }
+
+    // Then try tasks
+    const { data: task } = await supabase
+      .from('tasks')
+      .select('title, description, status, priority, background_color, created_at')
+      .eq('share_token', token)
+      .eq('is_public', true)
+      .maybeSingle()
+
+    if (task) {
+      return {
+        success: true,
+        data: {
+          type: 'task' as const,
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          priority: task.priority,
+          background_color: task.background_color,
+          created_at: task.created_at,
+        },
+      }
+    }
+
+    return {
+      success: false,
+      message: 'Shared item not found or link has expired',
+    }
   },
 
   async getNoteByToken(token: string) {
-    return request(`/share/note/${token}`);
+    return this.getByToken(token)
   },
 
   async getTaskByToken(token: string) {
-    return request(`/share/task/${token}`);
+    return this.getByToken(token)
   },
-};
+}
 
-export { APIError };
+export { APIError }

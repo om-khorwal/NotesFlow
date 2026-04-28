@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { requireAuth, getUser, getToken, setUser as setAuthUser } from '@/lib/auth';
+import { requireAuth, getUser, setUser as setAuthUser } from '@/lib/auth';
 import { profileAPI, authAPI } from '@/lib/api';
 import { toast } from '@/lib/toast';
 import { getInitials } from '@/lib/utils';
 import type { User, UserProfile } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const BIO_MAX_CHARS = 500;
 
 export default function ProfilePage() {
@@ -120,23 +119,14 @@ export default function ProfilePage() {
   };
 
   const uploadFile = async (file: File, type: 'avatar' | 'cover'): Promise<string | null> => {
-    const token = getToken();
-    const formDataUpload = new FormData();
-    formDataUpload.append('file', file);
-
     try {
-      const response = await fetch(`${API_BASE_URL}/profile/upload-${type}`, {
-        method: 'POST',
-        headers: {
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: formDataUpload,
-      });
-      const data = await response.json();
-      if (data.success) {
-        return type === 'avatar' ? data.data.avatar_url : data.data.cover_photo_url;
+      const res = type === 'avatar'
+        ? await profileAPI.uploadAvatar(file)
+        : await profileAPI.uploadCover(file);
+      if (res.success) {
+        return type === 'avatar' ? res.data.avatar_url : res.data.cover_photo_url;
       }
-      throw new Error(data.message || 'Upload failed');
+      throw new Error('Upload failed');
     } catch (error: any) {
       toast.error(error.message || `Failed to upload ${type}`);
       return null;
@@ -205,15 +195,7 @@ export default function ProfilePage() {
     });
   };
 
-  // Get avatar URL with proper base URL for uploaded files
-  const getImageUrl = (url: string | null | undefined) => {
-    if (!url) return null;
-    if (url.startsWith('/static/')) {
-      const base = API_BASE_URL.replace(/\/api$/, '');
-      return `${base}${url}`;
-    }
-    return url;
-  };
+  const getImageUrl = (url: string | null | undefined) => url ?? null;
 
 
   if (isLoading) {

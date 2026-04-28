@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { authAPI } from '@/lib/api';
-import { setToken, setUser, redirectIfAuth } from '@/lib/auth';
+import { setUser, redirectIfAuth } from '@/lib/auth';
 import { toast } from '@/lib/toast';
 import { motion } from 'framer-motion';
 import FloatingOrbs from '@/components/FloatingOrbs';
@@ -23,15 +23,12 @@ export default function LoginContent() {
 
   useEffect(() => {
     redirectIfAuth(router);
-    // Check for mode=signup parameter
     const mode = searchParams.get('mode');
-    if (mode === 'signup') {
-      setIsLogin(false);
-    }
+    if (mode === 'signup') setIsLogin(false);
   }, [router, searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,38 +38,25 @@ export default function LoginContent() {
     try {
       if (isLogin) {
         const response = await authAPI.login(formData.email, formData.password);
-
         if (response.success && response.data) {
-          setToken(response.data.token);
           setUser(response.data.user);
           toast.success('Welcome back!');
-
-          // Use window.location for reliable redirect after auth
           window.location.href = '/dashboard';
-        } else {
-          toast.error(response.message || 'Login failed');
         }
       } else {
         if (formData.password !== formData.confirmPassword) {
           toast.error('Passwords do not match');
           return;
         }
-
         const response = await authAPI.register(
           formData.username,
           formData.email,
-          formData.password
+          formData.password,
         );
-
         if (response.success && response.data) {
-          setToken(response.data.token);
           setUser(response.data.user);
           toast.success('Account created!');
-
-          // Use window.location for reliable redirect after auth
           window.location.href = '/dashboard';
-        } else {
-          toast.error(response.message || 'Registration failed');
         }
       }
     } catch (error: any) {
@@ -81,7 +65,6 @@ export default function LoginContent() {
       setIsLoading(false);
     }
   };
-
 
   const toggleMode = () => {
     setIsLogin(!isLogin);
@@ -192,7 +175,7 @@ export default function LoginContent() {
             >
               {isLogin ? (
                 <>
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <span className="font-medium text-indigo-300">Sign up</span>
                 </>
               ) : (

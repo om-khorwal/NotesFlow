@@ -1,31 +1,46 @@
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-// Routes that require authentication
 const protectedRoutes = ['/dashboard', '/profile']
-
-// Routes only for non-authenticated users
 const authRoutes = ['/login']
 
-export function middleware(request: NextRequest) {
-  const token = request.cookies.get('auth_token')?.value
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options),
+          )
+        },
+      },
+    },
+  )
+
+  // Refresh session so cookies stay fresh
+  const { data: { user } } = await supabase.auth.getUser()
+
   const { pathname } = request.nextUrl
 
-  // Check if accessing protected route without auth
-  if (protectedRoutes.some(route => pathname.startsWith(route))) {
-    if (!token) {
-      return NextResponse.redirect(new URL('/login', request.url))
-    }
+  if (protectedRoutes.some(r => pathname.startsWith(r)) && !user) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Redirect authenticated users away from login
-  if (authRoutes.includes(pathname) && token) {
+  if (authRoutes.includes(pathname) && user) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  return NextResponse.next()
+  return response
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/profile/:path*', '/login']
+  matcher: ['/dashboard/:path*', '/profile/:path*', '/login'],
 }

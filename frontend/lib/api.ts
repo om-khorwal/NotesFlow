@@ -505,7 +505,7 @@ export const shareAPI = {
     // Then try tasks
     const { data: task } = await supabase
       .from('tasks')
-      .select('title, description, status, priority, background_color, created_at')
+      .select('title, status, created_at')
       .eq('share_token', token)
       .eq('is_public', true)
       .maybeSingle()
@@ -516,10 +516,7 @@ export const shareAPI = {
         data: {
           type: 'task' as const,
           title: task.title,
-          description: task.description,
           status: task.status,
-          priority: task.priority,
-          background_color: task.background_color,
           created_at: task.created_at,
         },
       }

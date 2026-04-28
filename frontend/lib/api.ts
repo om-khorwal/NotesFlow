@@ -80,8 +80,7 @@ export const notesAPI = {
     const { data, error } = await supabase
       .from('notes')
       .select('*')
-      .order('is_pinned', { ascending: false })
-      .order('updated_at', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (error) throw new APIError(500, error.message)
     return {
@@ -126,7 +125,7 @@ export const notesAPI = {
 
   async update(
     id: number,
-    noteData: Partial<Pick<Note, 'title' | 'content' | 'background_color' | 'is_pinned'>>,
+    noteData: Partial<Pick<Note, 'title' | 'content' | 'background_color'>>,
   ) {
     const { data, error } = await supabase
       .from('notes')
@@ -146,17 +145,12 @@ export const notesAPI = {
   },
 
   async togglePin(id: number) {
-    const { data: current } = await supabase
-      .from('notes')
-      .select('is_pinned')
-      .eq('id', id)
-      .single()
-
+    // Pinning not supported - is_pinned column doesn't exist
+    // Return current note without modification
     const { data, error } = await supabase
       .from('notes')
-      .update({ is_pinned: !current?.is_pinned })
+      .select('*')
       .eq('id', id)
-      .select()
       .single()
 
     if (error) throw new APIError(500, error.message)
@@ -215,7 +209,6 @@ export const tasksAPI = {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
-      .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
 
     if (error) throw new APIError(500, error.message)
@@ -329,17 +322,12 @@ export const tasksAPI = {
   },
 
   async togglePin(id: number) {
-    const { data: current } = await supabase
-      .from('tasks')
-      .select('is_pinned')
-      .eq('id', id)
-      .single()
-
+    // Pinning not supported - is_pinned column doesn't exist
+    // Return current task without modification
     const { data, error } = await supabase
       .from('tasks')
-      .update({ is_pinned: !current?.is_pinned })
+      .select('*')
       .eq('id', id)
-      .select()
       .single()
 
     if (error) throw new APIError(500, error.message)

@@ -125,7 +125,6 @@ export default function DashboardPage() {
             priority: string;
             due_date: string;
             background_color: string;
-            is_pinned: boolean;
           }>
         );
 
@@ -209,23 +208,6 @@ export default function DashboardPage() {
     setPendingDelete(null);
   };
 
-  const handleTogglePin = async (id: number, type: 'note' | 'task') => {
-    try {
-      if (type === 'note') {
-        const response = await notesAPI.togglePin(id);
-        if (response.success && response.data) {
-          setNotes(notes.map((n) => (n.id === id ? response.data : n)));
-        }
-      } else {
-        const response = await tasksAPI.togglePin(id);
-        if (response.success && response.data) {
-          setTasks(tasks.map((t) => (t.id === id ? response.data : t)));
-        }
-      }
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to toggle pin');
-    }
-  };
 
   const handleSetColor = async (id: number, color: string, type: 'note' | 'task') => {
     try {
@@ -284,17 +266,13 @@ export default function DashboardPage() {
       task.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Sort: pinned first, then by updated_at
+  // Sort by created_at (newest first)
   const sortedNotes = [...filteredNotes].sort((a, b) => {
-    if (a.is_pinned && !b.is_pinned) return -1;
-    if (!a.is_pinned && b.is_pinned) return 1;
-    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   const sortedTasks = [...filteredTasks].sort((a, b) => {
-    if (a.is_pinned && !b.is_pinned) return -1;
-    if (!a.is_pinned && b.is_pinned) return 1;
-    return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   useEffect(() => {
@@ -520,7 +498,6 @@ export default function DashboardPage() {
                         note={note}
                         onUpdate={handleUpdateNote}
                         onDelete={handleDeleteNote}
-                        onTogglePin={handleTogglePin}
                         onSetColor={handleSetColor}
                         onShare={handleShareNote}
                         showColorPicker={showColorPicker === note.id}
@@ -570,7 +547,6 @@ export default function DashboardPage() {
                         onUpdate={handleUpdateTask}
                         onQuickUpdate={handleQuickUpdate}
                         onDelete={handleDeleteTask}
-                        onTogglePin={handleTogglePin}
                         onShare={handleShareTask}
                       />
                     ))}
@@ -706,7 +682,6 @@ function NoteCard({
   note,
   onUpdate,
   onDelete,
-  onTogglePin,
   onSetColor,
   onShare,
   showColorPicker,
@@ -715,7 +690,6 @@ function NoteCard({
   note: Note;
   onUpdate: (id: number, data: Partial<Note>) => void;
   onDelete: (id: number) => void;
-  onTogglePin: (id: number, type: 'note' | 'task') => void;
   onSetColor: (id: number, color: string, type: 'note' | 'task') => void;
   onShare: (id: number) => void;
   showColorPicker: boolean;
@@ -763,7 +737,7 @@ function NoteCard({
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9 }}
-      className={`note-card relative overflow-hidden rounded-2xl p-7 min-h-[220px] scale-[1.05] cursor-pointer backdrop-blur-xl border border-zinc-200 dark:border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300 ${note.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
+      className="note-card relative overflow-hidden rounded-2xl p-7 min-h-[220px] scale-[1.05] cursor-pointer backdrop-blur-xl border border-zinc-200 dark:border-white/20 shadow-lg hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300"
       onClick={() => !isEditing && setIsEditing(true)}
       style={{ backgroundColor: cardBg }}
     >
@@ -782,28 +756,6 @@ function NoteCard({
           <h3 className="text-lg font-semibold text-zinc-800 dark:text-white truncate max-w-[70%]">{note.title}</h3>
         )}
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin(note.id, 'note');
-            }}
-            className="p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-            title={note.is_pinned ? 'Unpin' : 'Pin'}
-          >
-            <svg
-              className={`w-4 h-4 ${note.is_pinned ? 'text-indigo-600 fill-current' : 'text-zinc-600 dark:text-zinc-300'}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-              />
-            </svg>
-          </button>
           <div className="relative">
             <button
               onClick={(e) => {
@@ -919,7 +871,7 @@ function NoteCard({
 
       {/* Footer */}
       <div className="mt-3 pt-3 border-t border-zinc-300 dark:border-white/20 text-xs text-zinc-500 dark:text-zinc-400">
-        {formatDate(note.updated_at)}
+        {formatDate(note.created_at)}
       </div>
     </motion.div>
   );
@@ -931,14 +883,12 @@ function TaskCard({
   onUpdate,
   onQuickUpdate,
   onDelete,
-  onTogglePin,
   onShare,
 }: {
   task: Task;
   onUpdate: (id: number, data: Partial<Task>) => void;        // debounced
   onQuickUpdate: (id: number, data: Partial<Task>) => void;   // instant
   onDelete: (id: number) => void;
-  onTogglePin: (id: number, type: 'note' | 'task') => void;
   onShare: (id: number) => void;
 }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -977,8 +927,7 @@ function TaskCard({
       exit={{ opacity: 0, y: -20 }}
       className={`task-card relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl bg-white dark:bg-white/10 border border-zinc-200 dark:border-white/20 shadow-lg
         hover:shadow-[0_8px_32px_rgba(0,0,0,0.3)] transition-all duration-300
-        ${task.status === 'completed' ? 'opacity-75' : ''}
-        ${task.is_pinned ? 'ring-2 ring-indigo-400/50' : ''}`}
+        ${task.status === 'completed' ? 'opacity-75' : ''}`}
       style={{ borderLeftWidth: '4px', borderLeftColor: task.background_color }}
       onClick={() => !isEditing && setIsEditing(true)}
     >
@@ -1134,24 +1083,6 @@ function TaskCard({
           <button
             onClick={(e) => {
               e.stopPropagation();
-              onTogglePin(task.id, 'task');
-            }}
-            className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
-            title={task.is_pinned ? 'Unpin' : 'Pin'}
-          >
-            <svg
-              className={`w-4 h-4 ${task.is_pinned ? 'text-indigo-400 fill-current' : 'text-zinc-600 dark:text-white/70'}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-          </button>
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
               onShare(task.id);
             }}  
             className="p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/10 transition-colors"
@@ -1178,7 +1109,7 @@ function TaskCard({
       </div>
 
       <div className="text-xs text-zinc-500 dark:text-white/50 mt-3 pt-3 border-t border-zinc-200 dark:border-white/20">
-        Updated {formatDate(task.updated_at)}
+        Created {formatDate(task.created_at)}
       </div>
     </motion.div>
   );

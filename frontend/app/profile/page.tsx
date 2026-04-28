@@ -120,11 +120,16 @@ export default function ProfilePage() {
 
   const uploadFile = async (file: File, type: 'avatar' | 'cover'): Promise<string | null> => {
     try {
-      const res = type === 'avatar'
-        ? await profileAPI.uploadAvatar(file)
-        : await profileAPI.uploadCover(file);
-      if (res.success) {
-        return type === 'avatar' ? res.data.avatar_url : res.data.cover_photo_url;
+      if (type === 'avatar') {
+        const res = await profileAPI.uploadAvatar(file);
+        if (res.success) {
+          return res.data.avatar_url;
+        }
+      } else {
+        const res = await profileAPI.uploadCover(file);
+        if (res.success) {
+          return res.data.cover_photo_url;
+        }
       }
       throw new Error('Upload failed');
     } catch (error: any) {
@@ -168,7 +173,7 @@ export default function ProfilePage() {
         setCoverPreview(null);
         await loadProfile();
       } else {
-        toast.error(response.message || 'Failed to update profile');
+        toast.error('Failed to update profile');
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to update profile');
